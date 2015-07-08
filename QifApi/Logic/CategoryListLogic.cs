@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
+using QifApi.Config;
 
 namespace QifApi.Logic
 {
@@ -13,8 +14,9 @@ namespace QifApi.Logic
         /// Creates a collection of category list transactions
         /// </summary>
         /// <param name="transactionItems">The transaction delimited string</param>
+        /// <param name="config">The configuration to use while importing raw data</param> 
         /// <returns>A collection of bank transactions</returns>
-        public static List<CategoryListTransaction> Import(string transactionItems)
+        public static List<CategoryListTransaction> Import(string transactionItems, Configuration config)
         {
             List<CategoryListTransaction> result = new List<CategoryListTransaction>();
 
@@ -38,7 +40,7 @@ namespace QifApi.Logic
                     {
                         case CategoryListFields.BudgetAmount:
                             // Set the date value
-                            clt.BudgetAmount = Common.GetDecimal(sEntry.Substring(1));
+                            clt.BudgetAmount = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
@@ -56,19 +58,19 @@ namespace QifApi.Logic
                             break;
                         case CategoryListFields.ExpenseCategory:
                             // Set the number value
-                            clt.ExpenseCategory = Common.GetBoolean(sEntry.Substring(1));
+                            clt.ExpenseCategory = sEntry.Substring(1).ParseBooleanString(config);
 
                             // Stop processing
                             break;
                         case CategoryListFields.IncomeCategory:
                             // Set the payee value
-                            clt.IncomeCategory = Common.GetBoolean(sEntry.Substring(1));
+                            clt.IncomeCategory = sEntry.Substring(1).ParseBooleanString(config);
 
                             // Stop processing
                             break;
                         case CategoryListFields.TaxRelated:
                             // Set the memo value
-                            clt.TaxRelated = Common.GetBoolean(sEntry.Substring(1));
+                            clt.TaxRelated = sEntry.Substring(1).ParseBooleanString(config);
 
                             // Stop processing
                             break;
@@ -97,7 +99,7 @@ namespace QifApi.Logic
             return result;
         }
 
-        internal static void Export(StreamWriter writer, List<CategoryListTransaction> list)
+        internal static void Export(StreamWriter writer, List<CategoryListTransaction> list, Configuration config)
         {
             if ((list != null) && (list.Count > 0))
             {
@@ -105,7 +107,7 @@ namespace QifApi.Logic
 
                 foreach (CategoryListTransaction item in list)
                 {
-                    writer.WriteLine(CategoryListFields.BudgetAmount + item.BudgetAmount.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(CategoryListFields.BudgetAmount + item.BudgetAmount.GetDecimalString(config));
 
                     if (!string.IsNullOrEmpty(item.CategoryName))
                     {

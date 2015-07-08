@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
+using QifApi.Config;
 
 namespace QifApi.Logic
 {
@@ -13,8 +14,9 @@ namespace QifApi.Logic
         /// Creates a collection of investment transactions
         /// </summary>
         /// <param name="transactionItems">The transaction delimited string</param>
+        /// <param name="config">The configuration to use while importing raw data</param> 
         /// <returns>A collection of bank transactions</returns>
-        public static List<InvestmentTransaction> Import(string transactionItems)
+        public static List<InvestmentTransaction> Import(string transactionItems, Configuration config)
         {
             List<InvestmentTransaction> result = new List<InvestmentTransaction>();
 
@@ -50,13 +52,13 @@ namespace QifApi.Logic
                             break;
                         case InvestmentAccountFields.Commission:
                             // Set the cleared status value
-                            it.Commission = Common.GetDecimal(sEntry.Substring(1));
+                            it.Commission = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
                         case InvestmentAccountFields.Date:
                             // Set the number value
-                            it.Date = Common.GetDateTime(sEntry.Substring(1));
+                            it.Date = sEntry.Substring(1).ParseDateString(config);
 
                             // Stop processing
                             break;
@@ -68,13 +70,13 @@ namespace QifApi.Logic
                             break;
                         case InvestmentAccountFields.Price:
                             // Set the memo value
-                            it.Price = Common.GetDecimal(sEntry.Substring(1));
+                            it.Price = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
                         case InvestmentAccountFields.Quantity:
                             // Set the memo value
-                            it.Quantity = Common.GetDecimal(sEntry.Substring(1));
+                            it.Quantity = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
@@ -92,7 +94,7 @@ namespace QifApi.Logic
                             break;
                         case InvestmentAccountFields.TransactionAmount:
                             // Set the memo value
-                            it.TransactionAmount = Common.GetDecimal(sEntry.Substring(1));
+                            it.TransactionAmount = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
@@ -104,7 +106,7 @@ namespace QifApi.Logic
                             break;
                         case InvestmentAccountFields.AmountTransferred:
                             // Set the memo value
-                            it.AmountTransferred = Common.GetDecimal(sEntry.Substring(1));
+                            it.AmountTransferred = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
@@ -127,7 +129,7 @@ namespace QifApi.Logic
             return result;
         }
 
-        internal static void Export(StreamWriter writer, List<InvestmentTransaction> list)
+        internal static void Export(StreamWriter writer, List<InvestmentTransaction> list, Configuration config)
         {
             if ((list != null) && (list.Count > 0))
             {
@@ -145,24 +147,24 @@ namespace QifApi.Logic
                         writer.WriteLine(InvestmentAccountFields.Action + item.Action);
                     }
 
-                    writer.WriteLine(InvestmentAccountFields.AmountTransferred + item.AmountTransferred.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(InvestmentAccountFields.AmountTransferred + item.AmountTransferred.GetDecimalString(config));
 
                     if (!string.IsNullOrEmpty(item.ClearedStatus))
                     {
                         writer.WriteLine(InvestmentAccountFields.ClearedStatus + item.ClearedStatus);
                     }
 
-                    writer.WriteLine(InvestmentAccountFields.Commission + item.Commission.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(InvestmentAccountFields.Commission + item.Commission.GetDecimalString(config));
 
-                    writer.WriteLine(InvestmentAccountFields.Date + item.Date.ToShortDateString());
+                    writer.WriteLine(InvestmentAccountFields.Date + item.Date.GetDateString(config));
 
                     if (!string.IsNullOrEmpty(item.Memo))
                     {
                         writer.WriteLine(InvestmentAccountFields.Memo + item.Memo);
                     }
-                    writer.WriteLine(InvestmentAccountFields.Price + item.Price.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(InvestmentAccountFields.Price + item.Price.GetDecimalString(config));
 
-                    writer.WriteLine(InvestmentAccountFields.Quantity + item.Quantity.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(InvestmentAccountFields.Quantity + item.Quantity.GetDecimalString(config));
 
                     if (!string.IsNullOrEmpty(item.Security))
                     {
@@ -174,7 +176,7 @@ namespace QifApi.Logic
                         writer.WriteLine(InvestmentAccountFields.TextFirstLine + item.TextFirstLine);
                     }
 
-                    writer.WriteLine(InvestmentAccountFields.TransactionAmount + item.TransactionAmount.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(InvestmentAccountFields.TransactionAmount + item.TransactionAmount.GetDecimalString(config));
 
                     writer.WriteLine(InvestmentAccountFields.EndOfEntry);
                 }

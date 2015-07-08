@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using QifApi.Transactions;
 using QifApi.Transactions.Fields;
+using QifApi.Config;
 
 namespace QifApi.Logic
 {
@@ -12,8 +13,9 @@ namespace QifApi.Logic
         /// Creates a collection of class list transactions
         /// </summary>
         /// <param name="transactionItems">The transaction delimited string</param>
+        /// <param name="config">The configuration to use while importing raw data</param> 
         /// <returns>A collection of bank transactions</returns>
-        public static List<ClassListTransaction> Import(string transactionItems)
+        public static List<ClassListTransaction> Import(string transactionItems, Configuration config)
         {
             List<ClassListTransaction> result = new List<ClassListTransaction>();
 
@@ -66,7 +68,7 @@ namespace QifApi.Logic
             return result;
         }
 
-        internal static void Export(StreamWriter writer, List<ClassListTransaction> list)
+        internal static void Export(StreamWriter writer, List<ClassListTransaction> list, Configuration config)
         {
             if ((list != null) && (list.Count > 0))
             {

@@ -4,6 +4,8 @@ using System.IO;
 using QifApi.Logic;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
+using QifApi.Config;
+using System.ComponentModel;
 
 namespace QifApi
 {
@@ -104,9 +106,20 @@ namespace QifApi
         }
 
         /// <summary>
+        /// Gets or sets the configuration to use while processing the QIF file.
+        /// </summary>
+        /// <value>The configuration to use while processing the QIF file.</value>
+        [TypeConverter(typeof(ExpandableObjectConverter))]
+        public Configuration Configuration
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Creates a new QIF DOM.
         /// </summary>
-        public QifDom()
+        public QifDom(Configuration config = null)
         {
             BankTransactions = new List<BasicTransaction>();
             CashTransactions = new List<BasicTransaction>();
@@ -118,6 +131,7 @@ namespace QifApi
             CategoryListTransactions = new List<CategoryListTransaction>();
             ClassListTransactions = new List<ClassListTransaction>();
             MemorizedTransactionListTransactions = new List<MemorizedTransactionListTransaction>();
+            Configuration = config ?? new Configuration();
         }
 
         /// <summary>
@@ -179,16 +193,16 @@ namespace QifApi
             {
                 writer.AutoFlush = true;
 
-                AccountListLogic.Export(writer, qif.AccountListTransactions);
-                AssetLogic.Export(writer, qif.AssetTransactions);
-                BankLogic.Export(writer, qif.BankTransactions);
-                CashLogic.Export(writer, qif.CashTransactions);
-                CategoryListLogic.Export(writer, qif.CategoryListTransactions);
-                ClassListLogic.Export(writer, qif.ClassListTransactions);
-                CreditCardLogic.Export(writer, qif.CreditCardTransactions);
-                InvestmentLogic.Export(writer, qif.InvestmentTransactions);
-                LiabilityLogic.Export(writer, qif.LiabilityTransactions);
-                MemorizedTransactionListLogic.Export(writer, qif.MemorizedTransactionListTransactions);
+                AccountListLogic.Export(writer, qif.AccountListTransactions, qif.Configuration);
+                AssetLogic.Export(writer, qif.AssetTransactions, qif.Configuration);
+                BankLogic.Export(writer, qif.BankTransactions, qif.Configuration);
+                CashLogic.Export(writer, qif.CashTransactions, qif.Configuration);
+                CategoryListLogic.Export(writer, qif.CategoryListTransactions, qif.Configuration);
+                ClassListLogic.Export(writer, qif.ClassListTransactions, qif.Configuration);
+                CreditCardLogic.Export(writer, qif.CreditCardTransactions, qif.Configuration);
+                InvestmentLogic.Export(writer, qif.InvestmentTransactions, qif.Configuration);
+                LiabilityLogic.Export(writer, qif.LiabilityTransactions, qif.Configuration);
+                MemorizedTransactionListLogic.Export(writer, qif.MemorizedTransactionListTransactions, qif.Configuration);
             }
         }
 
@@ -221,10 +235,11 @@ namespace QifApi
         /// Imports a QIF file stream reader and returns a QifDom object.
         /// </summary>
         /// <param name="reader">The stream reader pointing to an underlying QIF file to import.</param>
+        /// <param name="config">The configuration to use while importing raw data</param> 
         /// <returns>A QifDom object of transactions imported.</returns>
-        public static QifDom ImportFile(StreamReader reader)
+        public static QifDom ImportFile(StreamReader reader, Configuration config = null)
         {
-            QifDom result = new QifDom();
+            QifDom result = new QifDom(config);
 
             // Read the entire file
             string input = reader.ReadToEnd();
@@ -252,7 +267,7 @@ namespace QifApi
                             string bankItems = transactionTypes[i];
 
                             // Import all transaction types
-                            result.BankTransactions.AddRange(BankLogic.Import(bankItems));
+                            result.BankTransactions.AddRange(BankLogic.Import(bankItems, result.Configuration));
 
                             // All done
                             break;
@@ -264,7 +279,7 @@ namespace QifApi
                             string accountListItems = transactionTypes[i];
 
                             // Import all transaction types
-                            result.AccountListTransactions.AddRange(AccountListLogic.Import(accountListItems));
+                            result.AccountListTransactions.AddRange(AccountListLogic.Import(accountListItems, result.Configuration));
 
                             // All done
                             break;
@@ -276,7 +291,7 @@ namespace QifApi
                             string assetItems = transactionTypes[i];
 
                             // Import all transaction types
-                            result.AssetTransactions.AddRange(AssetLogic.Import(assetItems));
+                            result.AssetTransactions.AddRange(AssetLogic.Import(assetItems, result.Configuration));
 
                             // All done
                             break;
@@ -288,7 +303,7 @@ namespace QifApi
                             string cashItems = transactionTypes[i];
 
                             // Import all transaction types
-                            result.CashTransactions.AddRange(CashLogic.Import(cashItems));
+                            result.CashTransactions.AddRange(CashLogic.Import(cashItems, result.Configuration));
 
                             // All done
                             break;
@@ -300,7 +315,7 @@ namespace QifApi
                             string catItems = transactionTypes[i];
 
                             // Import all transaction types
-                            result.CategoryListTransactions.AddRange(CategoryListLogic.Import(catItems));
+                            result.CategoryListTransactions.AddRange(CategoryListLogic.Import(catItems, result.Configuration));
 
                             // All done
                             break;
@@ -312,7 +327,7 @@ namespace QifApi
                             string classItems = transactionTypes[i];
 
                             // Import all transaction types
-                            result.ClassListTransactions.AddRange(ClassListLogic.Import(classItems));
+                            result.ClassListTransactions.AddRange(ClassListLogic.Import(classItems, result.Configuration));
 
                             // All done
                             break;
@@ -324,7 +339,7 @@ namespace QifApi
                             string ccItems = transactionTypes[i];
 
                             // Import all transaction types
-                            result.CreditCardTransactions.AddRange(CreditCardLogic.Import(ccItems));
+                            result.CreditCardTransactions.AddRange(CreditCardLogic.Import(ccItems, result.Configuration));
 
                             // All done
                             break;
@@ -336,7 +351,7 @@ namespace QifApi
                             string investItems = transactionTypes[i];
 
                             // Import all transaction types
-                            result.InvestmentTransactions.AddRange(InvestmentLogic.Import(investItems));
+                            result.InvestmentTransactions.AddRange(InvestmentLogic.Import(investItems, result.Configuration));
 
                             // All done
                             break;
@@ -348,7 +363,7 @@ namespace QifApi
                             string liabilityItems = transactionTypes[i];
 
                             // Import all transaction types
-                            result.LiabilityTransactions.AddRange(LiabilityLogic.Import(liabilityItems));
+                            result.LiabilityTransactions.AddRange(LiabilityLogic.Import(liabilityItems, result.Configuration));
 
                             // All done
                             break;
@@ -360,7 +375,7 @@ namespace QifApi
                             string memItems = transactionTypes[i];
 
                             // Import all transaction types
-                            result.MemorizedTransactionListTransactions.AddRange(MemorizedTransactionListLogic.Import(memItems));
+                            result.MemorizedTransactionListTransactions.AddRange(MemorizedTransactionListLogic.Import(memItems, result.Configuration));
 
                             // All done
                             break;

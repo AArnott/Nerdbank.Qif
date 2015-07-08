@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
+using QifApi.Config;
 
 namespace QifApi.Logic
 {
@@ -13,8 +14,9 @@ namespace QifApi.Logic
         /// Creates a collection of asset transactions
         /// </summary>
         /// <param name="transactionItems">The transaction delimited string</param>
+        /// <param name="config">The configuration to use while importing raw data</param> 
         /// <returns>A collection of bank transactions</returns>
-        internal static List<BasicTransaction> Import(string transactionItems)
+        internal static List<BasicTransaction> Import(string transactionItems, Configuration config)
         {
             List<BasicTransaction> result = new List<BasicTransaction>();
 
@@ -38,13 +40,13 @@ namespace QifApi.Logic
                     {
                         case NonInvestmentAccountFields.Date:
                             // Set the date value
-                            at.Date = Common.GetDateTime(sEntry.Substring(1));
+                            at.Date = sEntry.Substring(1).ParseDateString(config);
 
                             // Stop processing
                             break;
                         case NonInvestmentAccountFields.Amount:
                             // Set the amount value
-                            at.Amount = Common.GetDecimal(sEntry.Substring(1));
+                            at.Amount = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
@@ -99,7 +101,7 @@ namespace QifApi.Logic
                             break;
                         case NonInvestmentAccountFields.SplitAmount:
                             // Add the split amount value
-                            at.SplitAmounts.Add(at.SplitAmounts.Count, Common.GetDecimal(sEntry.Substring(1)));
+                            at.SplitAmounts.Add(at.SplitAmounts.Count, sEntry.Substring(1).ParseDecimalString(config));
 
                             // Stop processing
                             break;
@@ -122,7 +124,7 @@ namespace QifApi.Logic
             return result;
         }
 
-        internal static void Export(StreamWriter writer, List<BasicTransaction> list)
+        internal static void Export(StreamWriter writer, List<BasicTransaction> list, Configuration config)
         {
             if ((list != null) && (list.Count > 0))
             {
@@ -130,14 +132,14 @@ namespace QifApi.Logic
 
                 foreach (BasicTransaction item in list)
                 {
-                    writer.WriteLine(NonInvestmentAccountFields.Date + item.Date.ToShortDateString());
+                    writer.WriteLine(NonInvestmentAccountFields.Date + item.Date.GetDateString(config));
 
                     foreach (int i in item.Address.Keys)
                     {
                         writer.WriteLine(NonInvestmentAccountFields.Address + item.Address[i]);
                     }
 
-                    writer.WriteLine(NonInvestmentAccountFields.Amount + item.Amount.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(NonInvestmentAccountFields.Amount + item.Amount.GetDecimalString(config));
 
                     if (!string.IsNullOrEmpty(item.Category))
                     {

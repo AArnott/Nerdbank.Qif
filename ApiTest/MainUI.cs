@@ -10,7 +10,7 @@ namespace QifApiTest
         public MainUI()
         {
             InitializeComponent();
-            qifDomPropertyGrid.SelectedObject = QifDom.ImportFile(Path.GetDirectoryName(Application.ExecutablePath) + "\\sample.qif");
+            qifDomPropertyGrid.SelectedObject = QifDom.ImportFile(Path.GetDirectoryName(Application.ExecutablePath) + Path.DirectorySeparatorChar + "sample.qif");
         }
 
         private void newButton_Click(object sender, EventArgs e)
