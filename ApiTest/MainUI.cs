@@ -12,7 +12,7 @@ namespace QifApiTest
         public MainUI()
         {
             InitializeComponent();
-            using (new SpoofCulture(new CultureInfo("en-US")))
+            using (new SpoofCulture("en-US"))
             {
                 qifDomPropertyGrid.SelectedObject = QifDom.ImportFile(Path.GetDirectoryName(Application.ExecutablePath) + Path.DirectorySeparatorChar + "sample.qif");
             }
@@ -46,7 +46,7 @@ namespace QifApiTest
             {
                 if (openFileDialog.ShowDialog(this) == DialogResult.OK)
                 {
-                    using (new SpoofCulture(new CultureInfo("en-US")))
+                    using (new SpoofCulture("en-US"))
                     {
                         qifDomPropertyGrid.SelectedObject = QifDom.ImportFile(openFileDialog.FileName);
                     }

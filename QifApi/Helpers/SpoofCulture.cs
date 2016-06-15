@@ -9,6 +9,9 @@ namespace QifApi.Helpers
         private readonly CultureInfo _previousCultureInfo;
         private readonly Thread _threadToSpoof;
 
+        public SpoofCulture(string nameOfCultureToUse, Thread threadToSpoof = null)
+            : this(new CultureInfo(nameOfCultureToUse), threadToSpoof) { }
+
         public SpoofCulture(CultureInfo cultureToUse, Thread threadToSpoof = null)
         {
             _threadToSpoof = threadToSpoof ?? Thread.CurrentThread;
