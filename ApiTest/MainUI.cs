@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Globalization;
 using System.Windows.Forms;
 using QifApi;
 using System.IO;
+using QifApi.Helpers;
 
 namespace QifApiTest
 {
@@ -10,7 +12,10 @@ namespace QifApiTest
         public MainUI()
         {
             InitializeComponent();
-            qifDomPropertyGrid.SelectedObject = QifDom.ImportFile(Path.GetDirectoryName(Application.ExecutablePath) + Path.DirectorySeparatorChar + "sample.qif");
+            using (new SpoofCulture(new CultureInfo("en-US")))
+            {
+                qifDomPropertyGrid.SelectedObject = QifDom.ImportFile(Path.GetDirectoryName(Application.ExecutablePath) + Path.DirectorySeparatorChar + "sample.qif");
+            }
         }
 
         private void newButton_Click(object sender, EventArgs e)
@@ -41,7 +46,10 @@ namespace QifApiTest
             {
                 if (openFileDialog.ShowDialog(this) == DialogResult.OK)
                 {
-                    qifDomPropertyGrid.SelectedObject = QifDom.ImportFile(openFileDialog.FileName);
+                    using (new SpoofCulture(new CultureInfo("en-US")))
+                    {
+                        qifDomPropertyGrid.SelectedObject = QifDom.ImportFile(openFileDialog.FileName);
+                    }
                 }
             }
         }
