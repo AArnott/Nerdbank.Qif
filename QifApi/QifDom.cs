@@ -153,7 +153,7 @@ namespace QifApi
         /// <param name="reader">The import reader stream.</param>
         public void Import(StreamReader reader)
         {
-            QifDom import = ImportFile(reader);
+            QifDom import = ImportFile(reader, Configuration);
 
             this.AccountListTransactions = import.AccountListTransactions;
             this.AssetTransactions = import.AssetTransactions;
