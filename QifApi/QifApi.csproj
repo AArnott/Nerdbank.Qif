@@ -115,6 +115,7 @@
     <Compile Include="Config\WriteDecimalFormatMode.cs" />
     <Compile Include="Config\ReadDateFormatMode.cs" />
     <Compile Include="Config\ReadDecimalFormatMode.cs" />
+    <Compile Include="Helpers\SpoofCulture.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources.resx">

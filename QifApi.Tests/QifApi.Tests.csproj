@@ -49,7 +49,6 @@
     <Compile Include="ImportTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Helpers\ResourceHelpers.cs" />
-    <Compile Include="Helpers\SpoofCulture.cs" />
     <Compile Include="SpoofCultureTests.cs" />
     <Compile Include="Helpers\StringExtensions.cs" />
   </ItemGroup>

@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Threading;
 
-namespace QifApi.Tests.Helpers
+namespace QifApi.Helpers
 {
     public class SpoofCulture : IDisposable
     {

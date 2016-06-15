@@ -2,10 +2,11 @@
 using QifApi.Config;
 using System.Diagnostics;
 using System.Globalization;
+using QifApi.Helpers;
 
 namespace QifApi
 {
-    
+
     internal static class Extensions
     {
         internal static string GetDateString(this DateTime @this, Configuration config)
@@ -48,15 +49,18 @@ namespace QifApi
             var result = new DateTime();
             var success = false;
 
-            if (config.ReadDateFormatMode == ReadDateFormatMode.Default)
+            using (new SpoofCulture(config.CustomReadCultureInfo ?? CultureInfo.CurrentCulture))
             {
-                // If parsing the date string fails
-                success = DateTime.TryParse(GetRealDateString(@this), CultureInfo.CurrentCulture, config.ParseDateTimeStyles, out result);
-            }
-            else
-            {
-                Trace.Assert(!string.IsNullOrWhiteSpace(config.CustomReadDateFormat));
-                success = DateTime.TryParseExact(GetRealDateString(@this), config.CustomReadDateFormat, CultureInfo.CurrentCulture, config.ParseDateTimeStyles, out result);
+                if (config.ReadDateFormatMode == ReadDateFormatMode.Default)
+                {
+                    // If parsing the date string fails
+                    success = DateTime.TryParse(GetRealDateString(@this), CultureInfo.CurrentCulture, config.ParseDateTimeStyles, out result);
+                }
+                else
+                {
+                    Trace.Assert(!string.IsNullOrWhiteSpace(config.CustomReadDateFormat));
+                    success = DateTime.TryParseExact(GetRealDateString(@this), config.CustomReadDateFormat, CultureInfo.CurrentCulture, config.ParseDateTimeStyles, out result);
+                }
             }
 
             // If parsing failed

@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Linq;
 using NUnit.Framework;
+using QifApi.Helpers;
 using QifApi.Tests.Helpers;
 
 namespace QifApi.Tests
