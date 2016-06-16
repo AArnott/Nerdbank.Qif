@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
+using System.Threading;
 using NUnit.Framework;
 using QifApi.Config;
 using QifApi.Helpers;
@@ -32,6 +33,7 @@ namespace QifApi.Tests
             {
                 Assert.Throws<InvalidCastException>(() =>
                     {
+                        Console.WriteLine(Thread.CurrentThread.CurrentCulture.DisplayName);
                         new QifDom().Import(reader);
                     });
             }
