@@ -124,11 +124,12 @@ namespace QifApi
         /// Imports the specified file and replaces the current instance properties with details found in the import file.
         /// </summary>
         /// <param name="fileName">Name of the file to import.</param>
-        public void Import(string fileName)
+        /// <param name="append">If set to <c>true</c> the import will append records rather than overwrite. Defaults to legacy behavior, which overwrites.</param>
+        public void Import(string fileName, bool append = false)
         {
             using (StreamReader reader = new StreamReader(fileName))
             {
-                Import(reader);
+                Import(reader, append);
             }
         }
 
@@ -136,20 +137,37 @@ namespace QifApi
         /// Imports a stream in a QIF format and replaces the current instance properties with details found in the import stream.
         /// </summary>
         /// <param name="reader">The import reader stream.</param>
-        public void Import(StreamReader reader)
+        /// <param name="append">If set to <c>true</c> the import will append records rather than overwrite. Defaults to legacy behavior, which overwrites.</param>
+        public void Import(StreamReader reader, bool append = false)
         {
             QifDom import = ImportFile(reader);
 
-            this.AccountListTransactions = import.AccountListTransactions;
-            this.AssetTransactions = import.AssetTransactions;
-            this.BankTransactions = import.BankTransactions;
-            this.CashTransactions = import.CashTransactions;
-            this.CategoryListTransactions = import.CategoryListTransactions;
-            this.ClassListTransactions = import.ClassListTransactions;
-            this.CreditCardTransactions = import.CreditCardTransactions;
-            this.InvestmentTransactions = import.InvestmentTransactions;
-            this.LiabilityTransactions = import.LiabilityTransactions;
-            this.MemorizedTransactionListTransactions = import.MemorizedTransactionListTransactions;
+            if (append)
+            {
+                AccountListTransactions.AddRange(import.AccountListTransactions);
+                AssetTransactions.AddRange(import.AssetTransactions);
+                BankTransactions.AddRange(import.BankTransactions);
+                CashTransactions.AddRange(import.CashTransactions);
+                CategoryListTransactions.AddRange(import.CategoryListTransactions);
+                ClassListTransactions.AddRange(import.ClassListTransactions);
+                CreditCardTransactions.AddRange(import.CreditCardTransactions);
+                InvestmentTransactions.AddRange(import.InvestmentTransactions);
+                LiabilityTransactions.AddRange(import.LiabilityTransactions);
+                MemorizedTransactionListTransactions.AddRange(import.MemorizedTransactionListTransactions);
+            }
+            else
+            {
+                AccountListTransactions = import.AccountListTransactions;
+                AssetTransactions = import.AssetTransactions;
+                BankTransactions = import.BankTransactions;
+                CashTransactions = import.CashTransactions;
+                CategoryListTransactions = import.CategoryListTransactions;
+                ClassListTransactions = import.ClassListTransactions;
+                CreditCardTransactions = import.CreditCardTransactions;
+                InvestmentTransactions = import.InvestmentTransactions;
+                LiabilityTransactions = import.LiabilityTransactions;
+                MemorizedTransactionListTransactions = import.MemorizedTransactionListTransactions;
+            }
         }
 
         /// <summary>
