@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
+using QifApi.Config;
 
 namespace QifApi.Logic
 {
@@ -13,8 +14,9 @@ namespace QifApi.Logic
         /// Creates a collection of memorized transaction list transactions
         /// </summary>
         /// <param name="transactionItems">The transaction delimited string</param>
+        /// <param name="config">The configuration to use while importing raw data</param> 
         /// <returns>A collection of bank transactions</returns>
-        public static List<MemorizedTransactionListTransaction> Import(string transactionItems)
+        public static List<MemorizedTransactionListTransaction> Import(string transactionItems, Configuration config)
         {
             List<MemorizedTransactionListTransaction> result = new List<MemorizedTransactionListTransaction>();
 
@@ -44,49 +46,49 @@ namespace QifApi.Logic
                             break;
                         case MemorizedTransactionListFields.AmortizationCurrentLoanBalance:
                             // Set the amount value
-                            mtlt.AmortizationCurrentLoanBalance = Common.GetDecimal(sEntry.Substring(1));
+                            mtlt.AmortizationCurrentLoanBalance = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
                         case MemorizedTransactionListFields.AmortizationFirstPaymentDate:
                             // Set the date value
-                            mtlt.AmortizationFirstPaymentDate = Common.GetDateTime(sEntry.Substring(1));
+                            mtlt.AmortizationFirstPaymentDate = sEntry.Substring(1).ParseDateString(config);
 
                             // Stop processing
                             break;
                         case MemorizedTransactionListFields.AmortizationInterestRate:
                             // Set the amount value
-                            mtlt.AmortizationInterestRate = Common.GetDecimal(sEntry.Substring(1));
+                            mtlt.AmortizationInterestRate = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
                         case MemorizedTransactionListFields.AmortizationNumberOfPaymentsAlreadyMade:
                             // Set the date value
-                            mtlt.AmortizationNumberOfPaymentsAlreadyMade = Common.GetDecimal(sEntry.Substring(1));
+                            mtlt.AmortizationNumberOfPaymentsAlreadyMade = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
                         case MemorizedTransactionListFields.AmortizationNumberOfPeriodsPerYear:
                             // Set the amount value
-                            mtlt.AmortizationNumberOfPeriodsPerYear = Common.GetDecimal(sEntry.Substring(1));
+                            mtlt.AmortizationNumberOfPeriodsPerYear = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
                         case MemorizedTransactionListFields.AmortizationOriginalLoanAmount:
                             // Set the date value
-                            mtlt.AmortizationOriginalLoanAmount = Common.GetDecimal(sEntry.Substring(1));
+                            mtlt.AmortizationOriginalLoanAmount = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
                         case MemorizedTransactionListFields.AmortizationTotalYearsForLoan:
                             // Set the amount value
-                            mtlt.AmortizationTotalYearsForLoan = Common.GetDecimal(sEntry.Substring(1));
+                            mtlt.AmortizationTotalYearsForLoan = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
                         case MemorizedTransactionListFields.Amount:
                             // Set the date value
-                            mtlt.Amount = Common.GetDecimal(sEntry.Substring(1));
+                            mtlt.Amount = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
@@ -146,7 +148,7 @@ namespace QifApi.Logic
                             break;
                         case MemorizedTransactionListFields.SplitAmount:
                             // Set the date value
-                            mtlt.SplitAmounts.Add(mtlt.SplitAmounts.Count, Common.GetDecimal(sEntry.Substring(1)));
+                            mtlt.SplitAmounts.Add(mtlt.SplitAmounts.Count, sEntry.Substring(1).ParseDecimalString(config));
 
                             // Stop processing
                             break;
@@ -182,7 +184,7 @@ namespace QifApi.Logic
             return result;
         }
 
-        internal static void Export(StreamWriter writer, List<MemorizedTransactionListTransaction> list)
+        internal static void Export(StreamWriter writer, List<MemorizedTransactionListTransaction> list, Configuration config)
         {
             if ((list != null) && (list.Count > 0))
             {
@@ -195,21 +197,21 @@ namespace QifApi.Logic
                         writer.WriteLine(MemorizedTransactionListFields.Address + item.Address[i]);
                     }
 
-                    writer.WriteLine(MemorizedTransactionListFields.AmortizationCurrentLoanBalance + item.AmortizationCurrentLoanBalance.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(MemorizedTransactionListFields.AmortizationCurrentLoanBalance + item.AmortizationCurrentLoanBalance.GetDecimalString(config));
 
-                    writer.WriteLine(MemorizedTransactionListFields.AmortizationFirstPaymentDate + item.AmortizationFirstPaymentDate.ToShortDateString());
+                    writer.WriteLine(MemorizedTransactionListFields.AmortizationFirstPaymentDate + item.AmortizationFirstPaymentDate.GetDateString(config));
 
-                    writer.WriteLine(MemorizedTransactionListFields.AmortizationInterestRate + item.AmortizationInterestRate.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(MemorizedTransactionListFields.AmortizationInterestRate + item.AmortizationInterestRate.GetDecimalString(config));
 
-                    writer.WriteLine(MemorizedTransactionListFields.AmortizationNumberOfPaymentsAlreadyMade + item.AmortizationNumberOfPaymentsAlreadyMade.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(MemorizedTransactionListFields.AmortizationNumberOfPaymentsAlreadyMade + item.AmortizationNumberOfPaymentsAlreadyMade.GetDecimalString(config));
 
-                    writer.WriteLine(MemorizedTransactionListFields.AmortizationNumberOfPeriodsPerYear + item.AmortizationNumberOfPeriodsPerYear.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(MemorizedTransactionListFields.AmortizationNumberOfPeriodsPerYear + item.AmortizationNumberOfPeriodsPerYear.GetDecimalString(config));
 
-                    writer.WriteLine(MemorizedTransactionListFields.AmortizationOriginalLoanAmount + item.AmortizationOriginalLoanAmount.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(MemorizedTransactionListFields.AmortizationOriginalLoanAmount + item.AmortizationOriginalLoanAmount.GetDecimalString(config));
 
-                    writer.WriteLine(MemorizedTransactionListFields.AmortizationTotalYearsForLoan + item.AmortizationTotalYearsForLoan.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(MemorizedTransactionListFields.AmortizationTotalYearsForLoan + item.AmortizationTotalYearsForLoan.GetDecimalString(config));
 
-                    writer.WriteLine(MemorizedTransactionListFields.Amount + item.Amount.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(MemorizedTransactionListFields.Amount + item.Amount.GetDecimalString(config));
 
                     if (!string.IsNullOrEmpty(item.Category))
                     {

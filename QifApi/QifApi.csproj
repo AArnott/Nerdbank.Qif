@@ -1,10 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{80519FD2-924F-4A95-B892-F8A97938FC97}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -49,6 +47,7 @@
     <DocumentationFile>bin\Debug\QifApi.xml</DocumentationFile>
     <RegisterForComInterop>true</RegisterForComInterop>
     <Prefer32Bit>false</Prefer32Bit>
+    <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -59,9 +58,6 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
     <DocumentationFile>bin\Release\QifApi.XML</DocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -78,7 +74,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Common.cs" />
     <Compile Include="Logic\AccountListLogic.cs" />
     <Compile Include="Logic\AssetLogic.cs" />
     <Compile Include="Logic\BankLogic.cs" />
@@ -114,6 +109,12 @@
     <Compile Include="Transactions\BasicTransaction.cs" />
     <Compile Include="Transactions\TransactionBase.cs" />
     <Compile Include="Transactions\TransactionType.cs" />
+    <Compile Include="Extensions.cs" />
+    <Compile Include="Config\Configuration.cs" />
+    <Compile Include="Config\WriteDateFormatMode.cs" />
+    <Compile Include="Config\WriteDecimalFormatMode.cs" />
+    <Compile Include="Config\ReadDateFormatMode.cs" />
+    <Compile Include="Config\ReadDecimalFormatMode.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources.resx">
@@ -142,4 +143,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ItemGroup>
+    <Folder Include="Config\" />
+  </ItemGroup>
 </Project>

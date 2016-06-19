@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
+using QifApi.Config;
 
 namespace QifApi.Logic
 {
@@ -13,8 +14,9 @@ namespace QifApi.Logic
         /// Creates a collection of account list transactions
         /// </summary>
         /// <param name="transactionItems">The transaction delimited string</param>
+        /// <param name="config">The configuration to use while importing raw data</param> 
         /// <returns>A collection of bank transactions</returns>
-        public static List<AccountListTransaction> Import(string transactionItems)
+        public static List<AccountListTransaction> Import(string transactionItems, Configuration config)
         {
             List<AccountListTransaction> result = new List<AccountListTransaction>();
 
@@ -44,7 +46,7 @@ namespace QifApi.Logic
                             break;
                         case AccountInformationFields.CreditLimit:
                             // Set the amount value
-                            alt.CreditLimit = Common.GetDecimal(sEntry.Substring(1));
+                            alt.CreditLimit = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
@@ -62,13 +64,13 @@ namespace QifApi.Logic
                             break;
                         case AccountInformationFields.StatementBalance:
                             // Set the payee value
-                            alt.StatementBalance = Common.GetDecimal(sEntry.Substring(1));
+                            alt.StatementBalance = sEntry.Substring(1).ParseDecimalString(config);
 
                             // Stop processing
                             break;
                         case AccountInformationFields.StatementBalanceDate:
                             // Set the memo value
-                            alt.StatementBalanceDate = Common.GetDateTime(sEntry.Substring(1));
+                            alt.StatementBalanceDate = sEntry.Substring(1).ParseDateString(config);
 
                             // Stop processing
                             break;
@@ -92,7 +94,7 @@ namespace QifApi.Logic
             return result;
         }
 
-        public static void Export(StreamWriter writer, List<AccountListTransaction> list)
+        public static void Export(StreamWriter writer, List<AccountListTransaction> list, Configuration config)
         {
             if ((list != null) && (list.Count > 0))
             {
@@ -105,7 +107,7 @@ namespace QifApi.Logic
                         writer.WriteLine(AccountInformationFields.AccountType + item.Type);
                     }
 
-                    writer.WriteLine(AccountInformationFields.CreditLimit + item.CreditLimit.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(AccountInformationFields.CreditLimit + item.CreditLimit.GetDecimalString(config));
 
                     if (!string.IsNullOrEmpty(item.Description))
                     {
@@ -117,9 +119,9 @@ namespace QifApi.Logic
                         writer.WriteLine(AccountInformationFields.Name + item.Name);
                     }
 
-                    writer.WriteLine(AccountInformationFields.StatementBalance + item.StatementBalance.ToString(CultureInfo.CurrentCulture));
+                    writer.WriteLine(AccountInformationFields.StatementBalance + item.StatementBalance.GetDecimalString(config));
 
-                    writer.WriteLine(AccountInformationFields.StatementBalanceDate + item.StatementBalanceDate.ToShortDateString());
+                    writer.WriteLine(AccountInformationFields.StatementBalanceDate + item.StatementBalanceDate.GetDateString(config));
 
                     writer.WriteLine(AccountInformationFields.EndOfEntry);
                 }
