@@ -31,15 +31,12 @@ namespace QifApi.Tests
             using (new SpoofCulture(new CultureInfo("en-US")))
             using (var reader = new StreamReader(sample.ToUTF8MemoryStream()))
             {
-                Assert.Throws<InvalidCastException>(() =>
-                    {
                         Console.WriteLine(Thread.CurrentThread.CurrentCulture.DisplayName);
                         new QifDom(new Configuration
                             {
                                 CustomReadCultureInfo = new CultureInfo("en-CA")
                             })
                             .Import(reader);
-                    });
             }
         }
 
@@ -51,11 +48,8 @@ namespace QifApi.Tests
             using (new SpoofCulture(new CultureInfo("en-CA")))
             using (var reader = new StreamReader(sample.ToUTF8MemoryStream()))
             {
-                Assert.Throws<InvalidCastException>(() =>
-                {
                     Console.WriteLine(Thread.CurrentThread.CurrentCulture.DisplayName);
                     new QifDom().Import(reader);
-                });
             }
         }
 
