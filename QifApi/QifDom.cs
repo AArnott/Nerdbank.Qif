@@ -155,7 +155,7 @@ namespace QifApi
         /// <param name="append">If set to <c>true</c> the import will append records rather than overwrite. Defaults to legacy behavior, which overwrites.</param>
         public void Import(StreamReader reader, bool append = false)
         {
-            QifDom import = ImportFile(reader);
+            QifDom import = ImportFile(reader, Configuration);
 
             if (append)
             {

@@ -59,6 +59,14 @@ namespace QifApi.Config
         public string CustomReadDateFormat { get; set; }
 
         /// <summary>
+        /// Gets or sets the custom <see cref="CultureInfo"/> to use when reading data.
+        /// </summary>
+        /// <remarks>
+        /// Overrides the current <see cref="CultureInfo"/> while importing.
+        /// </remarks>
+        public CultureInfo CustomReadCultureInfo { get; set; }
+
+        /// <summary>
         /// Gets or sets the date time styles to use while parsing dates.
         /// </summary>
         /// <value>The date time styles to use while parsing dates.</value>
