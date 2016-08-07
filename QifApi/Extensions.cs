@@ -1,8 +1,8 @@
-﻿using System;
-using QifApi.Config;
+﻿using QifApi.Config;
+using QifApi.Helpers;
+using System;
 using System.Diagnostics;
 using System.Globalization;
-using QifApi.Helpers;
 
 namespace QifApi
 {
@@ -97,30 +97,18 @@ namespace QifApi
             return result;
         }
 
-        internal static bool ParseBooleanString(this string @this, Configuration config)
-        {
-            bool result = false;
-
-            if (!bool.TryParse(@this, out result) && !string.IsNullOrWhiteSpace(@this))
-            {
-                throw new InvalidCastException(Resources.InvalidBooleanFormat);
-            }
-
-            return result;
-        }
-
         private static string GetRealDateString(string qifDateString)
         {
-            // Find the apostraphe
+            // Find the apostrophe
             int i = qifDateString.IndexOf("'", StringComparison.Ordinal);
 
             // Prepare the return string
             string result = "";
 
-            // If the apostraphe is present
+            // If the apostrophe is present
             if (i != -1)
             {
-                // Extract everything but the apostraphe
+                // Extract everything but the apostrophe
                 result = qifDateString.Substring(0, i) + "/" + qifDateString.Substring(i + 1);
 
                 // Replace spaces with zeros

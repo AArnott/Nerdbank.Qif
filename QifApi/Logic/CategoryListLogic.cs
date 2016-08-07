@@ -1,10 +1,9 @@
-﻿using QifApi.Transactions;
+﻿using QifApi.Config;
+using QifApi.Transactions;
 using QifApi.Transactions.Fields;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
-using QifApi.Config;
 
 namespace QifApi.Logic
 {
@@ -21,7 +20,10 @@ namespace QifApi.Logic
             List<CategoryListTransaction> result = new List<CategoryListTransaction>();
 
             // Create a new bank transaction
-            CategoryListTransaction clt = new CategoryListTransaction();
+            CategoryListTransaction clt = new CategoryListTransaction()
+            {
+                ExpenseCategory = true, // Default per spec
+            };
 
             // Split the string by new lines
             string[] sEntries = Regex.Split(transactionItems, "$", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.IgnorePatternWhitespace);
@@ -58,19 +60,21 @@ namespace QifApi.Logic
                             break;
                         case CategoryListFields.ExpenseCategory:
                             // Set the number value
-                            clt.ExpenseCategory = sEntry.Substring(1).ParseBooleanString(config);
+                            clt.ExpenseCategory = true;
+                            clt.IncomeCategory = false;
 
                             // Stop processing
                             break;
                         case CategoryListFields.IncomeCategory:
                             // Set the payee value
-                            clt.IncomeCategory = sEntry.Substring(1).ParseBooleanString(config);
+                            clt.IncomeCategory = true;
+                            clt.ExpenseCategory = false;
 
                             // Stop processing
                             break;
                         case CategoryListFields.TaxRelated:
                             // Set the memo value
-                            clt.TaxRelated = sEntry.Substring(1).ParseBooleanString(config);
+                            clt.TaxRelated = true;
 
                             // Stop processing
                             break;
@@ -119,9 +123,15 @@ namespace QifApi.Logic
                         writer.WriteLine(CategoryListFields.Description + item.Description);
                     }
 
-                    writer.WriteLine(CategoryListFields.ExpenseCategory + item.ExpenseCategory.ToString());
+                    if (item.ExpenseCategory)
+                    {
+                        writer.WriteLine(CategoryListFields.ExpenseCategory + item.ExpenseCategory.ToString());
+                    }
 
-                    writer.WriteLine(CategoryListFields.IncomeCategory + item.IncomeCategory.ToString());
+                    if (item.IncomeCategory)
+                    {
+                        writer.WriteLine(CategoryListFields.IncomeCategory + item.IncomeCategory.ToString());
+                    }
 
                     writer.WriteLine(CategoryListFields.TaxRelated + item.TaxRelated.ToString());
 
