@@ -51,4 +51,4 @@ All transactions present in the DOM are written according to the QIF file format
 **Note**: With the upcoming changes to target .NET Standard, some or all aspects of VB automation may no longer work. You can test the latest beta at [https://www.nuget.org/packages/QifApi/1.1.0-beta1](https://www.nuget.org/packages/QifApi/1.1.0-beta1). Feel free to open an issue or PR.
 
 # NuGet
-Releases are published on NuGet: [http://www.nuget.org/packages/qifapi](http://www.nuget.org/packages/qifapi) after every successful build of the master branch on AppVeyor. Build Status: [![Build status](https://ci.appveyor.com/api/projects/status/bv78m70dsop3i273/branch/master?svg=true)](https://ci.appveyor.com/project/ShaneWalters/qif/branch/master)
+Releases are published on NuGet: [http://www.nuget.org/packages/qifapi](http://www.nuget.org/packages/qifapi) if the deploy branch builds successfully on AppVeyor. Build Status: [![Build status](https://ci.appveyor.com/api/projects/status/bv78m70dsop3i273/branch/deploy?svg=true)](https://ci.appveyor.com/project/ShaneWalters/qif/branch/deploy)
