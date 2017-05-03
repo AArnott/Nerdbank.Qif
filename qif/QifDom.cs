@@ -8,6 +8,9 @@ using QifApi.Config;
 using System.ComponentModel;
 using System.Text;
 
+[assembly: ComVisibleAttribute(true)]
+[assembly: GuidAttribute("ef9b7bba-d661-4d77-9d53-80c10a71ec84")]
+
 namespace QifApi
 {
     /// <summary>
@@ -110,7 +113,6 @@ namespace QifApi
         /// Gets or sets the configuration to use while processing the QIF file.
         /// </summary>
         /// <value>The configuration to use while processing the QIF file.</value>
-        [TypeConverter(typeof(ExpandableObjectConverter))]
         public Configuration Configuration
         {
             get;
@@ -142,7 +144,7 @@ namespace QifApi
         /// <param name="append">If set to <c>true</c> the import will append records rather than overwrite. Defaults to legacy behavior, which overwrites.</param>
         public void Import(string fileName, bool append = false)
         {
-            using (StreamReader reader = new StreamReader(fileName))
+            using (StreamReader reader = new StreamReader(File.OpenRead(fileName)))
             {
                 Import(reader, append);
             }
@@ -216,7 +218,7 @@ namespace QifApi
                 File.SetAttributes(fileName, FileAttributes.Normal);
             }
 
-            using (StreamWriter writer = new StreamWriter(fileName, false, encoding ?? Encoding.UTF8))
+            using (StreamWriter writer = new StreamWriter(File.OpenWrite(fileName), encoding ?? Encoding.UTF8))
             {
                 writer.AutoFlush = true;
 
@@ -250,7 +252,7 @@ namespace QifApi
             }
 
             // Open the file
-            using (StreamReader sr = new StreamReader(fileName))
+            using (StreamReader sr = new StreamReader(File.OpenRead(fileName)))
             {
                 result = ImportFile(sr);
             }

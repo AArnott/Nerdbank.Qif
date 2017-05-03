@@ -17,8 +17,7 @@ namespace QifApi.Config
             WriteDateFormatMode = WriteDateFormatMode.Default;
             WriteDecimalFormatMode = WriteDecimalFormatMode.Default;
             ReadDateFormatMode = ReadDateFormatMode.Default;
-            ReadDecimalFormatMode = ReadDecimalFormatMode.Default;
-            ParseNumberStyles = NumberStyles.None;
+            ParseNumberStyles = NumberStyles.Any;
             ParseDateTimeStyles = DateTimeStyles.None;
         }
 
@@ -73,15 +72,9 @@ namespace QifApi.Config
         public DateTimeStyles ParseDateTimeStyles { get; set;}
 
         /// <summary>
-        /// Gets or sets the decimal format mode to use when parsing decimals. See ReadDecimalFormatMode for more information.
+        /// Gets or sets the custom decimal format when parsing decimals.
         /// </summary>
-        /// <value>The decimal format mode to use when parsing decimals.</value>
-        public ReadDecimalFormatMode ReadDecimalFormatMode { get; set; }
-
-        /// <summary>
-        /// Gets or sets the custom decimal format when the ReadDecimalFormatMode is set to <b>Custom</b>.
-        /// </summary>
-        /// <value>The custom decimal format when the ReadDecimalFormatMode is set to <b>Custom</b>.</value>
+        /// <value>The custom decimal format when parsing decimals.</value>
         public NumberStyles ParseNumberStyles { get; set; }
     }
 }

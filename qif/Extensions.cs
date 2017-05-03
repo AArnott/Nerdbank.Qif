@@ -1,12 +1,10 @@
 ﻿using QifApi.Config;
-using QifApi.Helpers;
 using System;
 using System.Diagnostics;
 using System.Globalization;
 
 namespace QifApi
 {
-
     internal static class Extensions
     {
         internal static string GetDateString(this DateTime @this, Configuration config)
@@ -15,7 +13,7 @@ namespace QifApi
 
             if (config.WriteDateFormatMode == WriteDateFormatMode.Default)
             {
-                result = @this.ToShortDateString();
+                result = @this.ToString("d"); // Short date string
             }
             else
             {
@@ -49,18 +47,14 @@ namespace QifApi
             var result = new DateTime();
             var success = false;
 
-            using (new SpoofCulture(config.CustomReadCultureInfo ?? CultureInfo.CurrentCulture))
+            if (config.ReadDateFormatMode == ReadDateFormatMode.Default)
             {
-                if (config.ReadDateFormatMode == ReadDateFormatMode.Default)
-                {
-                    // If parsing the date string fails
-                    success = DateTime.TryParse(GetRealDateString(@this), CultureInfo.CurrentCulture, config.ParseDateTimeStyles, out result);
-                }
-                else
-                {
-                    Trace.Assert(!string.IsNullOrWhiteSpace(config.CustomReadDateFormat));
-                    success = DateTime.TryParseExact(GetRealDateString(@this), config.CustomReadDateFormat, CultureInfo.CurrentCulture, config.ParseDateTimeStyles, out result);
-                }
+                success = DateTime.TryParse(GetRealDateString(@this), config.CustomReadCultureInfo ?? CultureInfo.CurrentCulture, config.ParseDateTimeStyles, out result);
+            }
+            else
+            {
+                Trace.Assert(!string.IsNullOrWhiteSpace(config.CustomReadDateFormat));
+                success = DateTime.TryParseExact(GetRealDateString(@this), config.CustomReadDateFormat, config.CustomReadCultureInfo ?? CultureInfo.CurrentCulture, config.ParseDateTimeStyles, out result);
             }
 
             // If parsing failed
@@ -77,19 +71,9 @@ namespace QifApi
         internal static decimal ParseDecimalString(this string @this, Configuration config)
         {
             var result = 0m;
-            var success = false;
-
-            if (config.ReadDecimalFormatMode == ReadDecimalFormatMode.Default)
-            {
-                success = decimal.TryParse(@this, out result);
-            }
-            else
-            {
-                success = decimal.TryParse(@this, config.ParseNumberStyles, CultureInfo.CurrentCulture, out result);
-            }
 
             // If parsing failed
-            if (!success)
+            if (!decimal.TryParse(@this, config.ParseNumberStyles, config.CustomReadCultureInfo ?? CultureInfo.CurrentCulture, out result))
             {
                 throw new InvalidCastException(Resources.InvalidDecimalFormat);
             }

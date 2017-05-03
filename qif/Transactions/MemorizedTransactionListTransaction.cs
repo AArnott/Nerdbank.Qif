@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using QifApi.Config;
 
 namespace QifApi.Transactions
 {

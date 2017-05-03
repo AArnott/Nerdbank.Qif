@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Runtime.Serialization;
+using QifApi.Config;
 
 namespace QifApi.Transactions
 {
@@ -38,26 +39,6 @@ namespace QifApi.Transactions
         }
 
         /// <summary>
-        /// Initializes a new instance of the System.Exception class with serialized data.
-        /// </summary>
-        /// <param name="info">The <see cref="SerializationInfo"/> that holds the serialized object data about the exception being thrown.</param>
-        /// <param name="context">The <see cref="StreamingContext"/> that contains contextual information about the source or destination.</param>
-        protected InvalidTransactionException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-            if (info != null)
-            {
-                foreach (var member in info)
-                {
-                    if (member.Name == "Transaction")
-                    {
-                        Transaction = member.Value as TransactionBase;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="InvalidTransactionException"/> class.
         /// </summary>
         /// <param name="transaction">The transaction.</param>
@@ -86,18 +67,6 @@ namespace QifApi.Transactions
             : base(message, innerException)
         {
             Transaction = transaction;
-        }
-
-        /// <summary>
-        /// Gets the object data.
-        /// </summary>
-        /// <param name="info">Info.</param>
-        /// <param name="context">Context.</param>
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            base.GetObjectData(info, context);
-
-            info.AddValue("Transaction", Transaction);
         }
 
         /// <summary>

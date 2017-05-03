@@ -12,7 +12,6 @@ namespace QifApi
     /// The QIF DOM COM interface.
     /// </summary>
     [Guid("8B4FB99B-D6CD-4582-8902-F36BB66D0965")]
-    [InterfaceType(ComInterfaceType.InterfaceIsIDispatch)]
     public interface IQifDomComWrapper
     {
         /// <summary>
@@ -134,7 +133,6 @@ namespace QifApi
     /// </summary>
     [Guid("F30BB5BC-606F-438B-AE06-D0D5638FFAC7")]
     [ClassInterface(ClassInterfaceType.None)]
-    [ProgId("QifApi.QifDomComWrapper")]
     public class QifDomComWrapper : IQifDomComWrapper
     {
         private ArrayList _BankTransactions;
