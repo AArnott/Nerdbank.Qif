@@ -1,11 +1,11 @@
 # qif
 A utility project for creating and consuming *.qif files. This project complies with documented Quicken Interchange Format (QIF) files specification. It is a completely managed, open source QIF API.
 
-This API enables you to import or export {"*.qif files. It also allows you to create or modify transactions and represent them easily in code as entities. This is written exclusively in C#, using VS 2008. Basically, this API can enable your application to completely handle any aspect of a QIF file. You can create transactions in an easy to understand model and export it to the versatile Quicken export file format, or you can easily import your QIF file, and have immediate access to all transactions in the file.
+This API enables you to import or export *.qif files. It also allows you to create or modify transactions and represent them easily in code as entities. This is written exclusively in C#, targeting .NET Standard 1.3. Basically, this API can enable your application to completely handle any aspect of a QIF file. You can create transactions in an easy to understand model and export it to the versatile Quicken export file format, or you can easily import your QIF file, and have immediate access to all transactions in the file.
 
-This project only produces a class library (*"}.dll). Just drop this library in place and reference it in your .NET application, and you're ready to go.
+This project only produces a class library (*.dll). Just drop this library in place and reference it in your .NET application, and you're ready to go.
 
-Here's a sample usage (If you need a live example, you can download ApiTest source code included in this project):
+Here's a sample usage:
 
 **C# / .NET Example**
 ```csharp
@@ -47,6 +47,8 @@ Sub Sample()
 End Sub
 ```
 All transactions present in the DOM are written according to the QIF file format specification. Dates and numbers should be written according to globalization standards.
+
+**Note**: With the upcoming changes to target .NET Standard, some or all aspects of VB automation may no longer work. You can test the latest beta at [https://www.nuget.org/packages/QifApi/1.1.0-beta1](https://www.nuget.org/packages/QifApi/1.1.0-beta1). Feel free to open an issue or PR.
 
 # NuGet
 Releases are published on NuGet: [http://www.nuget.org/packages/qifapi](http://www.nuget.org/packages/qifapi) after every successful build of the master branch on AppVeyor. Build Status: [![Build status](https://ci.appveyor.com/api/projects/status/bv78m70dsop3i273/branch/master?svg=true)](https://ci.appveyor.com/project/ShaneWalters/qif/branch/master)
