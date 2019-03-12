@@ -80,5 +80,50 @@ $-3.50
             Assert.Equal("Cake", transaction.SplitMemos[1]);
             Assert.Equal(-3.50M, transaction.SplitAmounts[1]);
         }
+
+        [Fact]
+        public void CanImportClass()
+        {
+            var sample = @"!Type:Class
+NMyClassName
+DMyClassDescription
+^";
+
+            QifDom parser = null;
+            using (new CultureContext(new CultureInfo("en-GB")))
+            using (var reader = new StringReader(sample))
+            {
+                parser = QifDom.ImportFile(reader);
+            }
+
+            var @class = parser.ClassListTransactions[0];
+            Assert.Equal("MyClassName", @class.ClassName);
+            Assert.Equal("MyClassDescription", @class.Description);
+        }
+
+        [Fact]
+        public void CanImportCategory()
+        {
+            var sample = @"!Type:Cat
+NEmployment
+DEmployment income
+T
+I
+^";
+
+            QifDom parser = null;
+            using (new CultureContext(new CultureInfo("en-GB")))
+            using (var reader = new StringReader(sample))
+            {
+                parser = QifDom.ImportFile(reader);
+            }
+
+            var category = parser.CategoryListTransactions[0];
+            Assert.Equal("Employment", category.CategoryName);
+            Assert.Equal("Employment income", category.Description);
+            Assert.True(category.IncomeCategory);
+            Assert.False(category.ExpenseCategory);
+            Assert.True(category.TaxRelated);
+        }
     }
 }
