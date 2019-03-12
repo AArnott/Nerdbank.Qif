@@ -266,7 +266,7 @@ namespace QifApi
         /// <param name="reader">The stream reader pointing to an underlying QIF file to import.</param>
         /// <param name="config">The configuration to use while importing raw data</param> 
         /// <returns>A QifDom object of transactions imported.</returns>
-        public static QifDom ImportFile(StreamReader reader, Configuration config = null)
+        public static QifDom ImportFile(TextReader reader, Configuration config = null)
         {
             QifDom result = new QifDom(config);
 
