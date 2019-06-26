@@ -19,14 +19,14 @@ variables:
 steps:
 - script: dotnet build --configuration $(buildConfiguration)
   displayName: 'dotnet build $(buildConfiguration)'
-- script: dotnet publish 'qif/qif.csproj' --output $(Build.ArtifactStagingDirectory)
-  displayName: 'dotnet publish'
+#- script: dotnet publish 'qif/qif.csproj' --output $(Build.ArtifactStagingDirectory)
+#  displayName: 'dotnet publish'
 - script: dotnet pack /p:PackageVersion=$(version)
   displayName: 'dotnet pack'
 - task: NuGetCommand@2
+  displayName: 'Push nuget package to DevOps feed'
   inputs:
     command: push
-    displayName: 'Push nuget package to DevOps feed'
     publishVstsFeed: 'Lien'
     # nuGetFeedType: external
     # publishFeedCredentials: ''
