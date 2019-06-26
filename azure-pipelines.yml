@@ -11,7 +11,27 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
+  version: '1.0.0'
+  major: '1'
+  minor: '0'
+  patch: '0'
 
 steps:
 - script: dotnet build --configuration $(buildConfiguration)
   displayName: 'dotnet build $(buildConfiguration)'
+- script: dotnet publish --output $(Build.ArtifactStagingDirectory)
+  displayName: 'dotnet publish'
+- script: dotnet pack /p:PackageVersion=$(version)
+  displayName: 'dotnet pack'
+- task: NuGetCommand@2
+  inputs:
+    command: push
+    publishVstsFeed: 'Lien'
+    # nuGetFeedType: external
+    # publishFeedCredentials: ''
+    # versioningScheme: byEnvVar
+    # versionEnvVar: version
+    # versioningScheme: byPrereleaseNumber
+    # majorVersion: '$(major)'
+    # minorVersion: '$(minor)'
+    # patchVersion: '$(patch)'
