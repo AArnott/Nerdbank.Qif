@@ -19,7 +19,7 @@ variables:
 steps:
 - script: dotnet build --configuration $(buildConfiguration)
   displayName: 'dotnet build $(buildConfiguration)'
-- task: DotNetCLI@2
+- task: DotNetCoreCLI@2
   displayName: 'dotnet pack'
   inputs: 
     command: 'pack'
