@@ -23,13 +23,14 @@ steps:
   displayName: 'dotnet pack'
   inputs: 
     command: 'pack'
-    configuration: 'release'
+    configuration: 'Release'
     packagesToPack: 'qif/qif.csproj'
     nobuild: true
     versioningScheme: byPrereleaseNumber
     majorVersion: '1'
     minorVersion: '0'
     patchVersion: '1'
+    verbosityPack: 'normal'
 - task: NuGetCommand@2
   displayName: 'Push nuget package to DevOps feed'
   inputs:
