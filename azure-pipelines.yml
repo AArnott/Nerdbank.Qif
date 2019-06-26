@@ -21,7 +21,7 @@ steps:
   displayName: 'dotnet build $(buildConfiguration)'
 #- script: dotnet publish 'qif/qif.csproj' --output $(Build.ArtifactStagingDirectory)
 #  displayName: 'dotnet publish'
-- script: dotnet pack 'qif/qif.csproj' /p:PackageVersion=1.0.1.$(Build.BuildNumber) --output $(Build.ArtifactStagingDirectory) --nobuild
+- script: dotnet pack 'qif/qif.csproj' /p:PackageVersion=1.0.1.$(Build.BuildNumber) --output $(Build.ArtifactStagingDirectory) --no-build
   displayName: 'dotnet pack'
 - task: NuGetCommand@2
   displayName: 'Push nuget package to DevOps feed'
