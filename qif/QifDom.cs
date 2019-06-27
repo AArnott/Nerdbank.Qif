@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using QifApi.Config;
 using System.ComponentModel;
 using System.Text;
+using System.Linq;
 
 [assembly: ComVisibleAttribute(true)]
 [assembly: GuidAttribute("ef9b7bba-d661-4d77-9d53-80c10a71ec84")]
@@ -276,6 +277,9 @@ namespace QifApi
             // Split the file by header types
             string[] transactionTypes = Regex.Split(input, @"^(!.*)$", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.IgnorePatternWhitespace);
 
+            // Remember the last account name we saw so we can link its transactions to it.
+            string currentAccountName = string.Empty;
+
             // Loop through the transaction types
             for (int i = 0; i < transactionTypes.Length; i++)
             {
@@ -296,7 +300,13 @@ namespace QifApi
                             string bankItems = transactionTypes[i];
 
                             // Import all transaction types
-                            result.BankTransactions.AddRange(BankLogic.Import(bankItems, result.Configuration));
+                            var transactions = BankLogic.Import(bankItems, result.Configuration);
+
+                            // Associate the transactions with last account we saw.
+                            foreach (var transaction in transactions)
+                                transaction.AccountName = currentAccountName;
+
+                            result.BankTransactions.AddRange(transactions);
 
                             // All done
                             break;
@@ -308,7 +318,12 @@ namespace QifApi
                             string accountListItems = transactionTypes[i];
 
                             // Import all transaction types
-                            result.AccountListTransactions.AddRange(AccountListLogic.Import(accountListItems, result.Configuration));
+                            var accounts = AccountListLogic.Import(accountListItems, result.Configuration);
+
+                            // Remember account so transaction following can be linked to it.
+                            currentAccountName = accounts.Last().Name;
+
+                            result.AccountListTransactions.AddRange(accounts);
 
                             // All done
                             break;

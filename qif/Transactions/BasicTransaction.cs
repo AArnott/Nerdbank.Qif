@@ -121,6 +121,11 @@ namespace QifApi.Transactions
         }
 
         /// <summary>
+        /// Links the transaction back to its account. Not actually part of the file - inferred from its position in the file.
+        /// </summary>
+        public string AccountName { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="BasicTransaction"/> class.
         /// </summary>
         public BasicTransaction()

@@ -125,5 +125,39 @@ I
             Assert.False(category.ExpenseCategory);
             Assert.True(category.TaxRelated);
         }
+
+        /// <summary>
+        /// Quicken may preceed bank transactions with the account details to indicate those transactions belong to that account.
+        /// </summary>
+        [Fact]
+        public void CanImportAccountWithTransactions()
+        {
+            var sample = @"!Clear:AutoSwitch
+!Option:AutoSwitch
+!Account
+NBank Account 1
+TBank
+^
+!Type:Bank 
+D01/1/18
+U-400.00
+T-400.00
+CX
+NCard
+PMr Land Lord
+LRent
+^";
+
+            QifDom parser = null;
+            using (new CultureContext(new CultureInfo("en-GB")))
+            using (var reader = new StringReader(sample))
+            {
+                parser = QifDom.ImportFile(reader);
+            }
+
+            Assert.Equal(1, parser.AccountListTransactions.Count);
+            Assert.Equal(1, parser.BankTransactions.Count);
+            Assert.Equal("Bank Account 1", parser.BankTransactions[0].AccountName);
+        }
     }
 }
