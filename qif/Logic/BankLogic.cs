@@ -124,7 +124,7 @@ namespace QifApi.Logic
             return result;
         }
 
-        internal static void Export(StreamWriter writer, List<BasicTransaction> list, Configuration config)
+        internal static void Export(TextWriter writer, List<BasicTransaction> list, Configuration config)
         {
             if ((list != null) && (list.Count > 0))
             {

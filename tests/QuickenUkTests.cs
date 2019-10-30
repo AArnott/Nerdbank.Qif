@@ -159,5 +159,27 @@ LRent
             Assert.Equal(1, parser.BankTransactions.Count);
             Assert.Equal("Bank Account 1", parser.BankTransactions[0].AccountName);
         }
+
+        [Fact]
+        public void CanExport()
+        {
+            var dom = new QifDom();
+            dom.AccountListTransactions.Add(new Transactions.AccountListTransaction()
+            {
+                Name = "Account1"
+            });
+
+            var exported = dom.Export();
+
+            System.Diagnostics.Debug.WriteLine(exported);
+            var expected = @"!Account
+L0
+NAccount1
+$0
+/01/01/0001
+^
+";
+            Assert.Equal(expected, exported);
+        }
     }
 }

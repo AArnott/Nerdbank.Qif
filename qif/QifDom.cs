@@ -189,6 +189,29 @@ namespace QifApi
         }
 
         /// <summary>
+        /// Exports the current instance properties to a string.
+        /// </summary>
+        /// <returns></returns>
+        public string Export()
+        {
+            return Export(this);
+        }
+
+        /// <summary>
+        /// Exports the current instance properties to a string.
+        /// </summary>
+        /// <param name="qif"></param>
+        /// <returns></returns>
+        public static string Export(QifDom qif)
+        {
+            using (var writer = new StringWriter())
+            {
+                Export(qif, writer);
+                return writer.ToString();
+            }
+        }
+
+        /// <summary>
         /// Exports the current instance properties to the specified file.
         /// </summary>
         /// <param name="fileName">Name of the file.</param>
@@ -222,18 +245,22 @@ namespace QifApi
             using (StreamWriter writer = new StreamWriter(File.OpenWrite(fileName), encoding ?? Encoding.UTF8))
             {
                 writer.AutoFlush = true;
-
-                AccountListLogic.Export(writer, qif.AccountListTransactions, qif.Configuration);
-                AssetLogic.Export(writer, qif.AssetTransactions, qif.Configuration);
-                BankLogic.Export(writer, qif.BankTransactions, qif.Configuration);
-                CashLogic.Export(writer, qif.CashTransactions, qif.Configuration);
-                CategoryListLogic.Export(writer, qif.CategoryListTransactions, qif.Configuration);
-                ClassListLogic.Export(writer, qif.ClassListTransactions, qif.Configuration);
-                CreditCardLogic.Export(writer, qif.CreditCardTransactions, qif.Configuration);
-                InvestmentLogic.Export(writer, qif.InvestmentTransactions, qif.Configuration);
-                LiabilityLogic.Export(writer, qif.LiabilityTransactions, qif.Configuration);
-                MemorizedTransactionListLogic.Export(writer, qif.MemorizedTransactionListTransactions, qif.Configuration);
+                Export(qif, writer);
             }
+        }
+
+        private static void Export(QifDom qif, TextWriter writer)
+        {
+            AccountListLogic.Export(writer, qif.AccountListTransactions, qif.Configuration);
+            AssetLogic.Export(writer, qif.AssetTransactions, qif.Configuration);
+            BankLogic.Export(writer, qif.BankTransactions, qif.Configuration);
+            CashLogic.Export(writer, qif.CashTransactions, qif.Configuration);
+            CategoryListLogic.Export(writer, qif.CategoryListTransactions, qif.Configuration);
+            ClassListLogic.Export(writer, qif.ClassListTransactions, qif.Configuration);
+            CreditCardLogic.Export(writer, qif.CreditCardTransactions, qif.Configuration);
+            InvestmentLogic.Export(writer, qif.InvestmentTransactions, qif.Configuration);
+            LiabilityLogic.Export(writer, qif.LiabilityTransactions, qif.Configuration);
+            MemorizedTransactionListLogic.Export(writer, qif.MemorizedTransactionListTransactions, qif.Configuration);
         }
 
         /// <summary>

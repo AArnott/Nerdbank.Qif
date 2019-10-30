@@ -94,7 +94,7 @@ namespace QifApi.Logic
             return result;
         }
 
-        public static void Export(StreamWriter writer, List<AccountListTransaction> list, Configuration config)
+        public static void Export(TextWriter writer, List<AccountListTransaction> list, Configuration config)
         {
             if ((list != null) && (list.Count > 0))
             {
