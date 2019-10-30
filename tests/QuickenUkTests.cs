@@ -169,7 +169,11 @@ LRent
                 Name = "Account1"
             });
 
-            var exported = dom.Export();
+            string exported;
+            using (new CultureContext(new CultureInfo("en-GB")))
+            {
+                exported = dom.Export();
+            }
 
             System.Diagnostics.Debug.WriteLine(exported);
             var expected = @"!Account
