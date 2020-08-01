@@ -143,6 +143,26 @@ namespace QifApi.Transactions
         }
 
         /// <summary>
+        /// Copy constructor. Initializes a new instance of the <see cref="InvestmentTransaction"/> class using 
+        /// values from txnToCopy"/>.
+        /// </summary>
+        public InvestmentTransaction(InvestmentTransaction txnToCopy)
+        {
+            AccountForTransfer = txnToCopy.AccountForTransfer;
+            Action = txnToCopy.Action;
+            AmountTransferred = txnToCopy.AmountTransferred;
+            ClearedStatus = txnToCopy.ClearedStatus;
+            Commission = txnToCopy.Commission;
+            Date = txnToCopy.Date;
+            Memo = txnToCopy.Memo;
+            Price = txnToCopy.Price;
+            Quantity = txnToCopy.Quantity;
+            Security = txnToCopy.Security;
+            TextFirstLine = txnToCopy.TextFirstLine;
+            TransactionAmount = txnToCopy.TransactionAmount;
+        }
+
+        /// <summary>
         /// Returns a <see cref="T:System.String"/> that represents the current <see cref="T:System.Object"/>.
         /// </summary>
         /// <returns>

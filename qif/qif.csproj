@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard1.3</TargetFramework>
-    <Company>https://github.com/shanewalters/qif</Company>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Company>https://github.com/mollman/qif</Company>
     <NeutralLanguage>en-US</NeutralLanguage>
     <AssemblyName>QifApi</AssemblyName>
     <AssemblyTitle>QifApi</AssemblyTitle>
@@ -9,9 +9,9 @@
     <PackageId>QifApi</PackageId>
     <Description>Quicken Interchange Format API (.NET Managed Wrapper)</Description>
     <Copyright>Copyright © 2017</Copyright>
-    <Version>1.1.0-beta1</Version>
-    <Authors>Shane Walters</Authors>
-    <PackageProjectUrl>https://github.com/shanewalters/qif</PackageProjectUrl>
+    <Version>1.2.0-beta</Version>
+    <Authors>Shane Walters, John Mollman</Authors>
+    <PackageProjectUrl>https://github.com/mollman/qif</PackageProjectUrl>
     <PackageTags>dotnetcore netcore nuget dotnetstandard netstandard qif qifapi quicken</PackageTags>
   </PropertyGroup>
   <ItemGroup>

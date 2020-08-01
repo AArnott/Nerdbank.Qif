@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Driver": {
+      "commandName": "Project",
+      "commandLineArgs": "\"R:\\Downloads\\john 401k july 2020.qif\" -m -s -i -q"
+    }
+  }
+}
