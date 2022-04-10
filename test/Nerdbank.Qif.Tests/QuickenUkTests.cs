@@ -23,7 +23,7 @@ LDining
         using (new CultureContext(new CultureInfo("en-GB")))
         using (var reader = new StringReader(sample))
         {
-            parser = QifDocument.ImportFile(reader);
+            parser = QifDocument.Load(reader);
         }
 
         BasicTransaction? transaction = parser.CreditCardTransactions[0];
@@ -57,7 +57,7 @@ $-3.50
         using (new CultureContext(new CultureInfo("en-GB")))
         using (var reader = new StringReader(sample))
         {
-            parser = QifDocument.ImportFile(reader);
+            parser = QifDocument.Load(reader);
         }
 
         BasicTransaction? transaction = parser.CreditCardTransactions[0];
@@ -92,7 +92,7 @@ DMyClassDescription
         using (new CultureContext(new CultureInfo("en-GB")))
         using (var reader = new StringReader(sample))
         {
-            parser = QifDocument.ImportFile(reader);
+            parser = QifDocument.Load(reader);
         }
 
         ClassListTransaction? @class = parser.ClassListTransactions[0];
@@ -114,7 +114,7 @@ I
         using (new CultureContext(new CultureInfo("en-GB")))
         using (var reader = new StringReader(sample))
         {
-            parser = QifDocument.ImportFile(reader);
+            parser = QifDocument.Load(reader);
         }
 
         CategoryListTransaction? category = parser.CategoryListTransactions[0];
@@ -151,7 +151,7 @@ LRent
         using (new CultureContext(new CultureInfo("en-GB")))
         using (var reader = new StringReader(sample))
         {
-            parser = QifDocument.ImportFile(reader);
+            parser = QifDocument.Load(reader);
         }
 
         Assert.Single(parser.AccountListTransactions);
@@ -171,7 +171,7 @@ LRent
         StringWriter exported = new();
         using (new CultureContext(new CultureInfo("en-GB")))
         {
-            dom.Export(exported);
+            dom.Save(exported);
         }
 
         System.Diagnostics.Debug.WriteLine(exported);

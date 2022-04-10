@@ -15,7 +15,7 @@ public class ImportTests
         using (new CultureContext(new CultureInfo("en-US")))
         using (var reader = new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(sample))))
         {
-            var qif = QifDocument.ImportFile(reader);
+            var qif = QifDocument.Load(reader);
             Assert.NotEmpty(qif.BankTransactions);
         }
     }
@@ -30,7 +30,7 @@ public class ImportTests
         {
             Assert.Throws<InvalidCastException>(() =>
             {
-                QifDocument.ImportFile(reader, new Configuration
+                QifDocument.Load(reader, new Configuration
                 {
                     CustomReadCultureInfo = new CultureInfo("ar-SA"),
                 });
@@ -46,7 +46,7 @@ public class ImportTests
         using (new CultureContext(new CultureInfo("ar-SA")))
         using (var reader = new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(sample))))
         {
-            Assert.Throws<InvalidCastException>(() => QifDocument.ImportFile(reader));
+            Assert.Throws<InvalidCastException>(() => QifDocument.Load(reader));
         }
     }
 
@@ -58,7 +58,7 @@ public class ImportTests
         using (new CultureContext(new CultureInfo("ar-SA")))
         using (var reader = new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(sample))))
         {
-            var qif = QifDocument.ImportFile(reader, new Configuration
+            var qif = QifDocument.Load(reader, new Configuration
             {
                 CustomReadCultureInfo = new CultureInfo("en-US"),
             });
@@ -74,7 +74,7 @@ public class ImportTests
         using (new CultureContext(new CultureInfo("en-CA")))
         using (var reader = new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(sample))))
         {
-            var qif = QifDocument.ImportFile(reader, new Configuration
+            var qif = QifDocument.Load(reader, new Configuration
             {
                 ReadDateFormatMode = ReadDateFormatMode.Custom,
                 CustomReadDateFormat = "M/d/yyyy",
@@ -93,9 +93,9 @@ public class ImportTests
         });
 
         string? file = Path.GetTempFileName();
-        sample.Export(file);
+        sample.Save(file);
 
-        var test = QifDocument.ImportFile(file);
+        var test = QifDocument.Load(file);
 
         Assert.Equal(sample.CategoryListTransactions.Count, test.CategoryListTransactions.Count);
         Assert.Equal(sample.CategoryListTransactions[0].IncomeCategory, test.CategoryListTransactions[0].IncomeCategory);
@@ -111,9 +111,9 @@ public class ImportTests
         });
 
         string? file = Path.GetTempFileName();
-        sample.Export(file);
+        sample.Save(file);
 
-        var test = QifDocument.ImportFile(file);
+        var test = QifDocument.Load(file);
 
         Assert.Equal(sample.CategoryListTransactions.Count, test.CategoryListTransactions.Count);
         Assert.Equal(sample.CategoryListTransactions[0].ExpenseCategory, test.CategoryListTransactions[0].ExpenseCategory);
@@ -129,9 +129,9 @@ public class ImportTests
         });
 
         string? file = Path.GetTempFileName();
-        sample.Export(file);
+        sample.Save(file);
 
-        var test = QifDocument.ImportFile(file);
+        var test = QifDocument.Load(file);
 
         Assert.Equal(sample.CategoryListTransactions.Count, test.CategoryListTransactions.Count);
         Assert.Equal(sample.CategoryListTransactions[0].TaxRelated, test.CategoryListTransactions[0].TaxRelated);

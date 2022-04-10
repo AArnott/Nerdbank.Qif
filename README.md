@@ -8,18 +8,14 @@ This is a library for creating, reading, modifying and writing Quicken Interchan
 ## Sample usage
 
 ```cs
-// This returns a QifDom object (defined in the QifImport namespace). The QifDom represents all transactions found in the QIF file.
-QifDom qifDom = QifDom.Import.ImportFile(@"c:\quicken.qif");
-// --or--
-QifDom qd = new QifDom();
-qd.Import(@"c:\quicken.qif"); // NOTE: This will replace existing transactions in the QifDom instance.
+using Nerdbank.Qif;
 
-... /* create or modify transactions */ ...
+var document = QifDocument.Load("quicken.qif");
+
+// create or modify transactions...
 
 // This writes the QifDom to a file (overwrites if file is already present).
-QifDom.ExportFile(qifDom, @"c:\quicken.qif");
-// --or--
-qd.Export(@"c:\quicken.qif");
+document.Save("quicken.qif");
 ```
 
 All transactions present in the DOM are written according to the QIF file format specification. Dates and numbers should be written according to globalization standards.

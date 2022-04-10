@@ -85,10 +85,10 @@ public class QifDocument
     /// </summary>
     /// <param name="fileName">The QIF file to import.</param>
     /// <returns>A QifDom object of transactions imported.</returns>
-    public static QifDocument ImportFile(string fileName)
+    public static QifDocument Load(string fileName)
     {
         using StreamReader sr = new StreamReader(File.OpenRead(fileName));
-        return ImportFile(sr);
+        return Load(sr);
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ public class QifDocument
     /// <param name="reader">The stream reader pointing to an underlying QIF file to import.</param>
     /// <param name="config">The configuration to use while importing raw data.</param>
     /// <returns>A QifDom object of transactions imported.</returns>
-    public static QifDocument ImportFile(TextReader reader, Configuration? config = null)
+    public static QifDocument Load(TextReader reader, Configuration? config = null)
     {
         QifDocument result = new QifDocument(config);
 
@@ -270,11 +270,11 @@ public class QifDocument
     /// </summary>
     /// <param name="fileName">Name of the file to import.</param>
     /// <param name="append">If set to <c>true</c> the import will append records rather than overwrite. Defaults to legacy behavior, which overwrites.</param>
-    public void Import(string fileName, bool append = false)
+    public void Load(string fileName, bool append = false)
     {
         using (StreamReader reader = new StreamReader(File.OpenRead(fileName)))
         {
-            this.Import(reader, append);
+            this.Load(reader, append);
         }
     }
 
@@ -283,9 +283,9 @@ public class QifDocument
     /// </summary>
     /// <param name="reader">The import reader stream.</param>
     /// <param name="append">If set to <c>true</c> the import will append records rather than overwrite. Defaults to legacy behavior, which overwrites.</param>
-    public void Import(StreamReader reader, bool append = false)
+    public void Load(StreamReader reader, bool append = false)
     {
-        QifDocument import = ImportFile(reader, this.Configuration);
+        QifDocument import = Load(reader, this.Configuration);
 
         if (append)
         {
@@ -324,7 +324,7 @@ public class QifDocument
     /// when not specified.
     /// </param>
     /// <remarks>This will overwrite an existing file.</remarks>
-    public void Export(string fileName, Encoding? encoding = null)
+    public void Save(string fileName, Encoding? encoding = null)
     {
         if (File.Exists(fileName))
         {
@@ -332,14 +332,14 @@ public class QifDocument
         }
 
         using StreamWriter writer = new StreamWriter(File.OpenWrite(fileName), encoding ?? Encoding.UTF8) { AutoFlush = true };
-        this.Export(writer);
+        this.Save(writer);
     }
 
     /// <summary>
     /// Writes the current QIF content to a given <see cref="TextWriter"/>.
     /// </summary>
     /// <param name="writer">The writer to serialize to.</param>
-    public void Export(TextWriter writer)
+    public void Save(TextWriter writer)
     {
         AccountListLogic.Export(writer, this.AccountListTransactions, this.Configuration);
         AssetLogic.Export(writer, this.AssetTransactions, this.Configuration);
