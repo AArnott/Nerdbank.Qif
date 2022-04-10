@@ -1,4 +1,13 @@
-﻿!Type:Bank
+﻿!Type:Tag
+NMarket adjustment
+^
+NReimbursable
+^
+NTax Related
+^
+NVacation
+^
+!Type:Bank
 D1/1/2008
 T1500
 PPaycheck
