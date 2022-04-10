@@ -12,16 +12,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="sample.qif" CopyToOutputDirectory="Always" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Using Include="Xunit"/>
-    <Using Include="Xunit.Abstractions"/>
+    <Using Include="Nerdbank.Qif" />
+    <Using Include="Xunit" />
+    <Using Include="Xunit.Abstractions" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Nerdbank.Qif\Nerdbank.Qif.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="SampleData\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -3,6 +3,7 @@
 
 using System.Text;
 using Nerdbank.Qif.Logic;
+using Validation;
 
 namespace Nerdbank.Qif;
 
@@ -74,11 +75,7 @@ public class QifDocument
     /// Gets or sets the configuration to use while processing the QIF file.
     /// </summary>
     /// <value>The configuration to use while processing the QIF file.</value>
-    public Configuration Configuration
-    {
-        get;
-        set;
-    }
+    public Configuration Configuration { get; set; }
 
     /// <summary>
     /// Imports a QIF file and returns a QifDom object.
@@ -87,6 +84,7 @@ public class QifDocument
     /// <returns>A QifDom object of transactions imported.</returns>
     public static QifDocument Load(string fileName)
     {
+        Requires.NotNull(fileName, nameof(fileName));
         using StreamReader sr = new StreamReader(File.OpenRead(fileName));
         return Load(sr);
     }
@@ -99,7 +97,8 @@ public class QifDocument
     /// <returns>A QifDom object of transactions imported.</returns>
     public static QifDocument Load(TextReader reader, Configuration? config = null)
     {
-        QifDocument result = new QifDocument(config);
+        Requires.NotNull(reader, nameof(reader));
+        QifDocument result = new(config);
 
         // Read the entire file
         string input = reader.ReadToEnd();
