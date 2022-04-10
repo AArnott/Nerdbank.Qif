@@ -6,7 +6,7 @@ namespace Nerdbank.Qif;
 /// <summary>
 /// An account list transaction. This is used to describe an account.
 /// </summary>
-public class AccountListTransaction : TransactionBase
+public class AccountListTransaction
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="AccountListTransaction"/> class.
@@ -57,8 +57,5 @@ public class AccountListTransaction : TransactionBase
     /// <returns>
     /// A <see cref="T:System.String"/> that represents the current <see cref="T:System.Object"/>.
     /// </returns>
-    public override string ToString()
-    {
-        return this.Name;
-    }
+    public override string ToString() => this.Name;
 }

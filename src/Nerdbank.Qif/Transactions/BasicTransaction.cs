@@ -8,7 +8,7 @@ namespace Nerdbank.Qif;
 /// <summary>
 /// A basic transaction. It is used to describe non-investment transactions.
 /// </summary>
-public class BasicTransaction : TransactionBase
+public class BasicTransaction
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="BasicTransaction"/> class.

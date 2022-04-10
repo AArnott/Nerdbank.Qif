@@ -8,7 +8,7 @@ namespace Nerdbank.Qif;
 /// <summary>
 /// An investment transaction.
 /// </summary>
-public class InvestmentTransaction : TransactionBase
+public class InvestmentTransaction
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="InvestmentTransaction"/> class.

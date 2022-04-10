@@ -6,7 +6,7 @@ namespace Nerdbank.Qif;
 /// <summary>
 /// A category list transaction.
 /// </summary>
-public class CategoryListTransaction : TransactionBase
+public class CategoryListTransaction
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CategoryListTransaction"/> class.
@@ -66,8 +66,5 @@ public class CategoryListTransaction : TransactionBase
     /// <returns>
     /// A <see cref="T:System.String"/> that represents the current <see cref="T:System.Object"/>.
     /// </returns>
-    public override string ToString()
-    {
-        return this.CategoryName;
-    }
+    public override string ToString() => this.CategoryName;
 }

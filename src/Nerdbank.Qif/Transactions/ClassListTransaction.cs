@@ -6,7 +6,7 @@ namespace Nerdbank.Qif;
 /// <summary>
 /// A class list transaction.
 /// </summary>
-public class ClassListTransaction : TransactionBase
+public class ClassListTransaction
 {
     /// <summary>
     /// Gets or sets the name of the class.
