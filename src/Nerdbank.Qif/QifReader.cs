@@ -39,20 +39,23 @@ public class QifReader : IDisposable
     public IFormatProvider FormatProvider { get; set; } = CultureInfo.InvariantCulture;
 
     /// <summary>
-    /// Reads the next token, if it is a <c>!Type:</c> header.
+    /// Reads the next token, if it is a <c>!</c> header (e.g. <c>!Type:</c> or <c>!Account</c>).
     /// </summary>
-    /// <param name="type">Receives the type (e.g. "Tag", "Bank").</param>
-    /// <returns><see langword="true" /> if the next token is a <see cref="QifParser.TokenKind.Type"/>; otherwise <see langword="false" />.</returns>
-    public bool TryReadType([NotNullWhen(true)] out ReadOnlyMemory<char> type)
+    /// <param name="name">Receives the header name (usually <c>Type</c> or <c>Account</c>).</param>
+    /// <param name="value">Receives the header value. May be empty (e.g. for <c>Account</c> headers).</param>
+    /// <returns><see langword="true" /> if the next token is a <see cref="QifParser.TokenKind.Header"/>; otherwise <see langword="false" />.</returns>
+    public bool TryReadHeader(out ReadOnlyMemory<char> name, out ReadOnlyMemory<char> value)
     {
-        if (this.TryGetNextTokenKind(QifParser.TokenKind.Type) &&
-            this.parser.CurrentType.HasValue)
+        if (this.TryGetNextTokenKind(QifParser.TokenKind.Header) &&
+            this.parser.CurrentHeader is (ReadOnlyMemory<char> headerName, ReadOnlyMemory<char> headerValue))
         {
-            type = this.parser.CurrentType.Value;
+            name = headerName;
+            value = headerValue;
             return true;
         }
 
-        type = default;
+        name = default;
+        value = default;
         return false;
     }
 
@@ -120,12 +123,8 @@ public class QifReader : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
     public string ReadFieldAsString()
     {
-        if (this.parser.Field is null)
-        {
-            throw new InvalidOperationException("Reader has not just read a field.");
-        }
-
-        return this.parser.Field.Value.Value.ToString();
+        this.ThrowIfNotAtField();
+        return this.parser.Field.Value.ToString();
     }
 
     /// <summary>
@@ -136,12 +135,8 @@ public class QifReader : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
     public virtual DateTime ReadFieldAsDate()
     {
-        if (this.parser.Field is null)
-        {
-            throw new InvalidOperationException("Reader has not just read a field.");
-        }
-
-        return DateTime.Parse(this.parser.Field.Value.Value.Span, this.FormatProvider);
+        this.ThrowIfNotAtField();
+        return DateTime.Parse(this.parser.Field.Value.Span, this.FormatProvider);
     }
 
     /// <summary>
@@ -152,12 +147,8 @@ public class QifReader : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
     public virtual long ReadFieldAsInt64()
     {
-        if (this.parser.Field is null)
-        {
-            throw new InvalidOperationException("Reader has not just read a field.");
-        }
-
-        return long.Parse(this.parser.Field.Value.Value.Span, NumberStyles.Any, this.FormatProvider);
+        this.ThrowIfNotAtField();
+        return long.Parse(this.parser.Field.Value.Span, NumberStyles.Any, this.FormatProvider);
     }
 
     /// <summary>
@@ -168,12 +159,8 @@ public class QifReader : IDisposable
     /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
     public virtual decimal ReadFieldAsDecimal()
     {
-        if (this.parser.Field is null)
-        {
-            throw new InvalidOperationException("Reader has not just read a field.");
-        }
-
-        return decimal.Parse(this.parser.Field.Value.Value.Span, NumberStyles.Any, this.FormatProvider);
+        this.ThrowIfNotAtField();
+        return decimal.Parse(this.parser.Field.Value.Span, NumberStyles.Any, this.FormatProvider);
     }
 
     /// <inheritdoc/>
@@ -192,4 +179,6 @@ public class QifReader : IDisposable
         this.lastReadConsumed = this.parser.Kind == expectedKind;
         return this.lastReadConsumed;
     }
+
+    private void ThrowIfNotAtField() => Verify.Operation(this.parser.Kind == QifParser.TokenKind.Field, "Reader has not just read a field.");
 }

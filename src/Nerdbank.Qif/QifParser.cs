@@ -14,8 +14,8 @@ namespace Nerdbank.Qif;
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
 public class QifParser : IDisposable
 {
-    private const string TypeHeader = "!Type:";
     private readonly TextReader reader;
+    private int lineNumber;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="QifParser"/> class.
@@ -43,9 +43,9 @@ public class QifParser : IDisposable
         EOF,
 
         /// <summary>
-        /// The reader is positioned at a <c>!Type:</c> header.
+        /// The reader is positioned at a <c>!</c> header (e.g. <c>!Type:</c>, <c>!Account</c>).
         /// </summary>
-        Type,
+        Header,
 
         /// <summary>
         /// The reader is positioned at a detail line.
@@ -64,14 +64,14 @@ public class QifParser : IDisposable
     public TokenKind Kind { get; private set; } = TokenKind.BOF;
 
     /// <summary>
-    /// Gets the most recently read <see cref="TokenKind.Type" /> token.
+    /// Gets the most recently read <see cref="TokenKind.Header" /> token.
     /// </summary>
-    public ReadOnlyMemory<char>? CurrentType { get; private set; }
+    public (ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) CurrentHeader { get; private set; }
 
     /// <summary>
     /// Gets the details of the field at the current reader position.
     /// </summary>
-    public (ReadOnlyMemory<char> Header, ReadOnlyMemory<char> Value)? Field { get; private set; }
+    public (ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) Field { get; private set; }
 
     private string DebuggerDisplay => $"{this.Kind}";
 
@@ -93,27 +93,32 @@ public class QifParser : IDisposable
             return this.Kind = TokenKind.EOF;
         }
 
-        ThrowIfNot(line.Length > 0, "Unexpected empty line in data file.");
+        this.lineNumber++;
+        ThrowIfNot(line.Length > 0, this.lineNumber, "Unexpected empty line in data file.");
 
-        this.Field = null;
+        this.Field = default;
 
         switch (line[0])
         {
             case '!':
-                ThrowIfNot(line.StartsWith(TypeHeader, StringComparison.Ordinal), "Invalid type header.");
-                this.Kind = TokenKind.Type;
-                this.CurrentType = line.AsMemory(TypeHeader.Length);
+                ThrowIfNot(line.Length > 1, this.lineNumber, "Line too short.");
+                this.Kind = TokenKind.Header;
+                int colonIndex = line.IndexOf(':');
+                this.CurrentHeader = colonIndex < 0
+                    ? (line.AsMemory(1), default)
+                    : (line.AsMemory(1, colonIndex - 1), line.AsMemory(colonIndex + 1));
                 break;
             case '^':
-                ThrowIfNot(line.Length == 1, "End of record line too long");
+                ThrowIfNot(line.Length == 1, this.lineNumber, "End of record line too long");
                 this.Kind = TokenKind.EndOfRecord;
                 break;
             case 'X':
-                ThrowIfNot(line.Length > 1, "Line too short");
+                ThrowIfNot(line.Length > 2, this.lineNumber, "Line too short.");
                 this.Kind = TokenKind.Field;
                 this.Field = (line.AsMemory(0, 2), line.AsMemory(2));
                 break;
             default:
+                ThrowIfNot(line.Length > 1, this.lineNumber, "Line too short.");
                 this.Kind = TokenKind.Field;
                 this.Field = (line.AsMemory(0, 1), line.AsMemory(1));
                 break;
@@ -122,11 +127,11 @@ public class QifParser : IDisposable
         return this.Kind;
     }
 
-    private static void ThrowIfNot(bool condition, string message)
+    private static void ThrowIfNot(bool condition, int lineNumber, string message)
     {
         if (!condition)
         {
-            throw new InvalidTransactionException(message);
+            throw new InvalidTransactionException($"Line {lineNumber}: {message}");
         }
     }
 }

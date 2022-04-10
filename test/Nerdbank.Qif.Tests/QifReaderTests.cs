@@ -29,25 +29,39 @@ public class QifReaderTests : TestBase
     {
         using QifReader reader = new(new StreamReader(GetSampleDataStream(ReaderInputsDataFile)));
 
-        ReadType("Tag");
+        ReadHeader("Type", "Tag");
         ReadField("N", "Market adjustment");
         Assert.True(reader.TryReadEndOfRecord());
         ReadField("N", "Reimbursable");
         Assert.True(reader.TryReadEndOfRecord());
-        ReadType("Bank");
+        ReadHeader("Type", "Bank");
         ReadField("D", "1/1/2008");
         ReadField("T", "1500");
         ReadField("N", "123");
         ReadField("P", "Paycheck");
         ReadField("L", "Income.Salary");
         Assert.True(reader.TryReadEndOfRecord());
+        ReadHeader("Option", "AutoSwitch");
+        ReadHeader("Account");
+        ReadField("N", "360 Checking");
+        ReadField("T", "Bank");
+        Assert.True(reader.TryReadEndOfRecord());
+        ReadField("N", "Amazon Payments");
+        ReadField("T", "Bank");
+        Assert.True(reader.TryReadEndOfRecord());
+        ReadHeader("Clear", "AutoSwitch");
+        ReadHeader("Account");
+        ReadField("N", "Nuther Account");
+        ReadField("T", "Oth A");
+        Assert.True(reader.TryReadEndOfRecord());
         Assert.True(reader.TryReadEndOfFile());
         Assert.True(reader.TryReadEndOfFile());
 
-        void ReadType(string expectedType)
+        void ReadHeader(string expectedType, string expectedValue = "")
         {
-            Assert.True(reader.TryReadType(out ReadOnlyMemory<char> type));
+            Assert.True(reader.TryReadHeader(out ReadOnlyMemory<char> type, out ReadOnlyMemory<char> value));
             AssertEqual(expectedType, type);
+            AssertEqual(expectedValue, value);
         }
 
         void ReadField(string expectedHeader, string expectedValue)
@@ -63,34 +77,48 @@ public class QifReaderTests : TestBase
     {
         using QifReader reader = new(new StreamReader(GetSampleDataStream(ReaderInputsDataFile)));
 
-        ReadType("Tag");
-        Assert.False(reader.TryReadType(out _));
+        ReadHeader("Type", "Tag");
+        Assert.False(reader.TryReadHeader(out _, out _));
         ReadField("N", "Market adjustment");
         Assert.True(reader.TryReadEndOfRecord());
         ReadField("N", "Reimbursable");
         Assert.True(reader.TryReadEndOfRecord());
-        ReadType("Bank");
+        ReadHeader("Type", "Bank");
         ReadField("D", "1/1/2008");
         ReadField("T", "1500");
         ReadField("N", "123");
         ReadField("P", "Paycheck");
         ReadField("L", "Income.Salary");
         Assert.True(reader.TryReadEndOfRecord());
+        ReadHeader("Option", "AutoSwitch");
+        ReadHeader("Account");
+        ReadField("N", "360 Checking");
+        ReadField("T", "Bank");
+        Assert.True(reader.TryReadEndOfRecord());
+        ReadField("N", "Amazon Payments");
+        ReadField("T", "Bank");
+        Assert.True(reader.TryReadEndOfRecord());
+        ReadHeader("Clear", "AutoSwitch");
+        ReadHeader("Account");
+        ReadField("N", "Nuther Account");
+        ReadField("T", "Oth A");
+        Assert.True(reader.TryReadEndOfRecord());
         Assert.True(reader.TryReadEndOfFile());
         Assert.True(reader.TryReadEndOfFile());
 
-        void ReadType(string expectedType)
+        void ReadHeader(string expectedName, string expectedValue = "")
         {
             Assert.False(reader.TryReadField(out _, out _));
             Assert.False(reader.TryReadEndOfRecord());
             Assert.False(reader.TryReadEndOfFile());
-            Assert.True(reader.TryReadType(out ReadOnlyMemory<char> type));
-            AssertEqual(expectedType, type);
+            Assert.True(reader.TryReadHeader(out ReadOnlyMemory<char> name, out ReadOnlyMemory<char> value));
+            AssertEqual(expectedName, name);
+            AssertEqual(expectedValue, value);
         }
 
         void ReadField(string expectedHeader, string expectedValue)
         {
-            Assert.False(reader.TryReadType(out _));
+            Assert.False(reader.TryReadHeader(out _, out _));
             Assert.False(reader.TryReadEndOfRecord());
             Assert.False(reader.TryReadEndOfFile());
             Assert.True(reader.TryReadField(out ReadOnlyMemory<char> name, out ReadOnlyMemory<char> value));
@@ -104,9 +132,9 @@ public class QifReaderTests : TestBase
     {
         using QifReader reader = new(new StreamReader(GetSampleDataStream(ReaderInputsDataFile)));
 
-        while (reader.TryReadType(out ReadOnlyMemory<char> type))
+        while (reader.TryReadHeader(out ReadOnlyMemory<char> headerName, out ReadOnlyMemory<char> headerValue))
         {
-            this.Logger.WriteLine($"{type} records:");
+            this.Logger.WriteLine($"{headerName} {headerValue} records:");
             while (true)
             {
                 while (reader.TryReadField(out ReadOnlyMemory<char> name, out ReadOnlyMemory<char> value))
@@ -133,13 +161,13 @@ public class QifReaderTests : TestBase
     {
         using QifReader reader = new(new StreamReader(GetSampleDataStream(ReaderInputsDataFile)));
 
-        Assert.True(reader.TrySkipToToken(QifParser.TokenKind.Type));
-        Assert.True(reader.TryReadType(out _));
+        for (int i = 0; i < 6; i++)
+        {
+            Assert.True(reader.TrySkipToToken(QifParser.TokenKind.Header));
+            Assert.True(reader.TryReadHeader(out _, out _));
+        }
 
-        Assert.True(reader.TrySkipToToken(QifParser.TokenKind.Type));
-        Assert.True(reader.TryReadType(out _));
-
-        Assert.False(reader.TrySkipToToken(QifParser.TokenKind.Type));
+        Assert.False(reader.TrySkipToToken(QifParser.TokenKind.Header));
         Assert.True(reader.TryReadEndOfFile());
     }
 
@@ -149,7 +177,7 @@ public class QifReaderTests : TestBase
         using QifReader reader = new(new StreamReader(GetSampleDataStream(ReaderInputsDataFile)));
 
         Assert.Throws<InvalidOperationException>(() => reader.ReadFieldAsString());
-        reader.TryReadType(out _);
+        reader.TryReadHeader(out _, out _);
         Assert.Throws<InvalidOperationException>(() => reader.ReadFieldAsString());
         reader.TryReadField(out _, out _);
         Assert.Equal("Market adjustment", reader.ReadFieldAsString());
@@ -190,10 +218,10 @@ public class QifReaderTests : TestBase
 
     private static bool TrySkipToType(QifReader reader, string type)
     {
-        while (reader.TrySkipToToken(QifParser.TokenKind.Type))
+        while (reader.TrySkipToToken(QifParser.TokenKind.Header))
         {
-            Assert.True(reader.TryReadType(out ReadOnlyMemory<char> actualType));
-            if (QifUtilities.Equals(type, actualType))
+            Assert.True(reader.TryReadHeader(out ReadOnlyMemory<char> headerName, out ReadOnlyMemory<char> headerValue));
+            if (QifUtilities.Equals("Type", headerName) && QifUtilities.Equals(type, headerValue))
             {
                 return true;
             }

@@ -10,3 +10,16 @@ N123
 PPaycheck
 LIncome.Salary
 ^
+!Option:AutoSwitch
+!Account
+N360 Checking
+TBank
+^
+NAmazon Payments
+TBank
+^
+!Clear:AutoSwitch
+!Account
+NNuther Account
+TOth A
+^
