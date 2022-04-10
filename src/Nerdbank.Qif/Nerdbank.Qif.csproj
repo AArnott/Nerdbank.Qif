@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.1</TargetFrameworks>
+    <Description>Quicken Interchange Format (QIF) I/O library</Description>
+    <Copyright>Copyright © 2022</Copyright>
+    <Authors>Shane Walters, John Mollman, Andrew Arnott</Authors>
+    <PackageTags>qif quicken</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Update="Strings.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Strings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="System.Text.RegularExpressions"/>
+  </ItemGroup>
+</Project>

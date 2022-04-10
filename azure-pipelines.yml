@@ -1,43 +1,31 @@
-# ASP.NET Core
-# Build and test ASP.NET Core projects targeting .NET Core.
-# Add steps that run tests, create a NuGet package, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
-
 trigger:
   batch: true
   branches:
     include:
-    - netstandard
+    - main
+    - 'validate/*'
+  paths:
+    exclude:
+    - doc/
+    - '*.md'
+    - .vscode/
+    - .github/
 
-pool:
-  vmImage: 'ubuntu-latest'
+parameters:
+- name: includeMacOS
+  displayName: Build on macOS
+  type: boolean
+  default: false # macOS is often bogged down in Azure Pipelines
 
 variables:
-  buildConfiguration: 'Release'
+  TreatWarningsAsErrors: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  BuildConfiguration: Release
+  #codecov_token: 4dc9e7e2-6b01-4932-a180-847b52b43d35 # Get a new one from https://codecov.io/
+  ci_feed: https://pkgs.dev.azure.com/andrewarnott/_packaging/CI/nuget/v3/index.json # Azure Artifacts feed URL
+  NUGET_PACKAGES: $(Agent.TempDirectory)/.nuget/packages
 
-steps:
-- script: dotnet build --configuration $(buildConfiguration)
-  displayName: 'Build $(buildConfiguration)'
-- task: DotNetCoreCLI@2
-  displayName: 'Test'
-  inputs:
-    command: test
-    projects: 'tests/*.csproj'
-    arguments: '--configuration $(buildConfiguration)'
-- task: DotNetCoreCLI@2
-  displayName: 'Package'
-  inputs: 
-    command: 'pack'
-    configuration: 'Release'
-    packagesToPack: 'qif/qif.csproj'
-    nobuild: true
-    versioningScheme: byPrereleaseNumber
-    majorVersion: '1'
-    minorVersion: '0'
-    patchVersion: '1'
-    verbosityPack: 'normal'
-- task: NuGetCommand@2
-  displayName: 'Push nuget package to DevOps feed'
-  inputs:
-    command: push
-    publishVstsFeed: 'Lien'
+jobs:
+- template: azure-pipelines/build.yml
+  parameters:
+    includeMacOS: ${{ parameters.includeMacOS }}
