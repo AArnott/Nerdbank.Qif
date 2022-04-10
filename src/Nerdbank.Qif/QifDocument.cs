@@ -3,7 +3,6 @@
 
 using System.Text;
 using Nerdbank.Qif.Logic;
-using Validation;
 
 namespace Nerdbank.Qif;
 

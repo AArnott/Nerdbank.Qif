@@ -5,6 +5,11 @@ using System.Globalization;
 
 public class ImportTests : TestBase
 {
+    public ImportTests(ITestOutputHelper logger)
+        : base(logger)
+    {
+    }
+
     [Fact]
     public void Can_import_sample_qif_when_current_culture_is_en_US()
     {
