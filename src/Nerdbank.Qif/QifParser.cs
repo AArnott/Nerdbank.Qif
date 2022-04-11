@@ -113,12 +113,11 @@ public class QifParser : IDisposable
                 this.Kind = TokenKind.EndOfRecord;
                 break;
             case 'X':
-                ThrowIfNot(line.Length > 2, this.lineNumber, "Line too short.");
+                ThrowIfNot(line.Length >= 2, this.lineNumber, "Line too short.");
                 this.Kind = TokenKind.Field;
                 this.Field = (line.AsMemory(0, 2), line.AsMemory(2));
                 break;
             default:
-                ThrowIfNot(line.Length > 1, this.lineNumber, "Line too short.");
                 this.Kind = TokenKind.Field;
                 this.Field = (line.AsMemory(0, 1), line.AsMemory(1));
                 break;
