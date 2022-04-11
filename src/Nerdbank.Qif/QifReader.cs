@@ -142,7 +142,31 @@ public class QifReader : IDisposable
     /// </summary>
     /// <returns>The parsed value.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
-    public virtual DateTime ReadFieldAsDate() => DateTime.Parse(this.Field.Span, this.FormatProvider);
+    public virtual DateTime ReadFieldAsDate()
+    {
+        if (this.Field.Span.Length > 50)
+        {
+            throw new InvalidTransactionException("Date value too long.");
+        }
+
+        Span<char> mutableDate = stackalloc char[this.Field.Span.Length];
+        this.Field.Span.CopyTo(mutableDate);
+
+        // Replace ' with /, and space with 0.
+        for (int i = 0; i < mutableDate.Length; i++)
+        {
+            if (mutableDate[i] == '\'')
+            {
+                mutableDate[i] = '/';
+            }
+            else if (mutableDate[i] == ' ')
+            {
+                mutableDate[i] = '0';
+            }
+        }
+
+        return DateTime.Parse(mutableDate, this.FormatProvider);
+    }
 
     /// <summary>
     /// Parses the field value read during the last call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>
