@@ -39,6 +39,19 @@ public class QifReader : IDisposable
     public IFormatProvider FormatProvider { get; set; } = CultureInfo.InvariantCulture;
 
     /// <summary>
+    /// Gets the value of the field at the current reader position.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
+    public ReadOnlyMemory<char> Field
+    {
+        get
+        {
+            this.ThrowIfNotAtField();
+            return this.parser.Field.Value;
+        }
+    }
+
+    /// <summary>
     /// Reads the next token, if it is a <c>!</c> header (e.g. <c>!Type:</c> or <c>!Account</c>).
     /// </summary>
     /// <param name="name">Receives the header name (usually <c>Type</c> or <c>Account</c>).</param>
@@ -121,11 +134,7 @@ public class QifReader : IDisposable
     /// </summary>
     /// <returns>The parsed value.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
-    public string ReadFieldAsString()
-    {
-        this.ThrowIfNotAtField();
-        return this.parser.Field.Value.ToString();
-    }
+    public string ReadFieldAsString() => this.Field.ToString();
 
     /// <summary>
     /// Parses the field value read during the last call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>
@@ -133,11 +142,7 @@ public class QifReader : IDisposable
     /// </summary>
     /// <returns>The parsed value.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
-    public virtual DateTime ReadFieldAsDate()
-    {
-        this.ThrowIfNotAtField();
-        return DateTime.Parse(this.parser.Field.Value.Span, this.FormatProvider);
-    }
+    public virtual DateTime ReadFieldAsDate() => DateTime.Parse(this.Field.Span, this.FormatProvider);
 
     /// <summary>
     /// Parses the field value read during the last call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>
@@ -145,11 +150,7 @@ public class QifReader : IDisposable
     /// </summary>
     /// <returns>The parsed value.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
-    public virtual long ReadFieldAsInt64()
-    {
-        this.ThrowIfNotAtField();
-        return long.Parse(this.parser.Field.Value.Span, NumberStyles.Any, this.FormatProvider);
-    }
+    public virtual long ReadFieldAsInt64() => long.Parse(this.Field.Span, NumberStyles.Any, this.FormatProvider);
 
     /// <summary>
     /// Parses the field value read during the last call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>
@@ -157,10 +158,22 @@ public class QifReader : IDisposable
     /// </summary>
     /// <returns>The parsed value.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
-    public virtual decimal ReadFieldAsDecimal()
+    public virtual decimal ReadFieldAsDecimal() => decimal.Parse(this.Field.Span, NumberStyles.Any, this.FormatProvider);
+
+    /// <summary>
+    /// Parses the field value read during the last call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>
+    /// as a <see cref="ClearedState"/>.
+    /// </summary>
+    /// <returns>The parsed value.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
+    public virtual ClearedState ReadFieldAsClearedState()
     {
-        this.ThrowIfNotAtField();
-        return decimal.Parse(this.parser.Field.Value.Span, NumberStyles.Any, this.FormatProvider);
+        return this.Field.Length == 0 ? ClearedState.None : char.ToUpperInvariant(this.Field.Span[0]) switch
+        {
+            '*' or 'C' => ClearedState.Cleared,
+            'R' or 'X' => ClearedState.Reconciled,
+            _ => throw new InvalidTransactionException("Unrecognized reconciled status."),
+        };
     }
 
     /// <inheritdoc/>

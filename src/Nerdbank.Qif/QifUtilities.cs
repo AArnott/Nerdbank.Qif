@@ -38,6 +38,28 @@ public static class QifUtilities
         return true;
     }
 
+    internal static T ValueOrThrow<T>(T? value, string fieldName)
+        where T : struct
+    {
+        if (value is null)
+        {
+            throw new InvalidTransactionException("Missing required field: " + fieldName);
+        }
+
+        return value.Value;
+    }
+
+    internal static T ValueOrThrow<T>(T? value, string fieldName)
+        where T : class
+    {
+        if (value is null)
+        {
+            throw new InvalidTransactionException("Missing required field: " + fieldName);
+        }
+
+        return value;
+    }
+
     internal static string GetDateString(this DateTime @this, Configuration config)
     {
         string? result = null;
