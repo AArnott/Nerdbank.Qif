@@ -19,7 +19,7 @@ T1,500.00
 LNetBank Checking
 ^";
         using QifReader reader = new(new StringReader(qifSource));
-        NewInvestmentTransaction transaction = NewInvestmentTransaction.Load(reader);
+        InvestmentTransaction transaction = InvestmentTransaction.Load(reader);
         Assert.Equal(new DateTime(2006, 10, 27), transaction.Date);
         Assert.Equal("Cash", transaction.Action);
         Assert.Equal(ClearedState.Reconciled, transaction.ClearedStatus);
@@ -45,7 +45,7 @@ MCASH CONTRIBUTION PRIOR YEAR
 LNetBank Checking
 ^";
         using QifReader reader = new(new StringReader(qifSource));
-        NewInvestmentTransaction transaction = NewInvestmentTransaction.Load(reader);
+        InvestmentTransaction transaction = InvestmentTransaction.Load(reader);
         Assert.Equal(new DateTime(2006, 10, 27), transaction.Date);
         Assert.Equal("Cash", transaction.Action);
         Assert.Equal(ClearedState.Reconciled, transaction.ClearedStatus);
@@ -72,7 +72,7 @@ T1,500.00
 LNetBank Checking
 ^";
         using QifReader reader = new(new StringReader(qifSource));
-        NewInvestmentTransaction transaction = NewInvestmentTransaction.Load(reader);
+        InvestmentTransaction transaction = InvestmentTransaction.Load(reader);
         Assert.Equal(new DateTime(2006, 10, 27), transaction.Date);
         Assert.Equal(1500, transaction.TransactionAmount);
     }

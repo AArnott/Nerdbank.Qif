@@ -6,6 +6,7 @@ public class QifDocumentTests
     [Fact]
     public void Load_ValidatesArguments()
     {
+        Assert.Throws<ArgumentNullException>("reader", () => QifDocument.Load((QifReader)null!));
         Assert.Throws<ArgumentNullException>("reader", () => QifDocument.Load((TextReader)null!));
         Assert.Throws<ArgumentNullException>("fileName", () => QifDocument.Load((string)null!));
     }

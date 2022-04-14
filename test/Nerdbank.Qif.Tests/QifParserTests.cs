@@ -89,4 +89,25 @@ public class QifParserTests : TestBase
             Assert.Equal(0, parser.Field.Name.Length);
         }
     }
+
+    [Fact]
+    public void ReadTrimsHeaderValues()
+    {
+        using QifParser parser = new(new StringReader("!Type:Bank "));
+        Assert.Equal(QifParser.TokenKind.Header, parser.Read());
+        AssertEqual("Bank", parser.CurrentHeader.Value);
+    }
+
+    [Fact]
+    public void ReadTrimsFieldValues()
+    {
+        using QifParser parser = new(new StringReader("!Type:Bank\nD1/1/2021 \nT12.00 \nXXAb \n"));
+        Assert.Equal(QifParser.TokenKind.Header, parser.Read());
+        Assert.Equal(QifParser.TokenKind.Field, parser.Read());
+        AssertEqual("1/1/2021", parser.Field.Value);
+        Assert.Equal(QifParser.TokenKind.Field, parser.Read());
+        AssertEqual("12.00", parser.Field.Value);
+        Assert.Equal(QifParser.TokenKind.Field, parser.Read());
+        AssertEqual("Ab", parser.Field.Value);
+    }
 }

@@ -77,6 +77,8 @@ public record Account(string Name)
             }
         }
 
+        reader.ReadEndOfRecord();
+
         return new(ValueOrThrow(name, FieldNames.Name))
         {
             Type = type,

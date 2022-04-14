@@ -36,7 +36,10 @@ public class QifReader : IDisposable
     /// <summary>
     /// Gets or sets the format provider that is used to parse non-string values.
     /// </summary>
-    public IFormatProvider FormatProvider { get; set; } = CultureInfo.InvariantCulture;
+    public IFormatProvider FormatProvider { get; set; } = CultureInfo.CurrentCulture;
+
+    /// <inheritdoc cref="QifParser.Kind"/>
+    public QifParser.TokenKind Kind => this.parser.Kind;
 
     /// <summary>
     /// Gets the value of the field at the current reader position.
@@ -204,6 +207,18 @@ public class QifReader : IDisposable
     public void Dispose()
     {
         this.parser.Dispose();
+    }
+
+    /// <summary>
+    /// Reads the <see cref="QifParser.TokenKind.EndOfRecord"/> token at the current position.
+    /// </summary>
+    /// <exception cref="InvalidTransactionException">Thrown if the current token is not the expected token.</exception>
+    internal void ReadEndOfRecord()
+    {
+        if (!this.TryReadEndOfRecord())
+        {
+            throw new InvalidTransactionException("Missing expected end of record token.");
+        }
     }
 
     private bool TryGetNextTokenKind(QifParser.TokenKind expectedKind)

@@ -87,6 +87,8 @@ public record Category(string Name)
             }
         }
 
+        reader.ReadEndOfRecord();
+
         return new(ValueOrThrow(name, FieldNames.Name))
         {
             Description = description,

@@ -56,6 +56,11 @@ public partial record BankTransaction(DateTime Date, decimal Amount)
     public ImmutableList<BankSplit> Splits { get; init; } = ImmutableList<BankSplit>.Empty;
 
     /// <summary>
+    /// Gets the name of the account these transactions belong to, if known.
+    /// </summary>
+    public string? AccountName { get; init; }
+
+    /// <summary>
     /// Deserializes a <see cref="BankTransaction"/> from the given <see cref="QifReader"/>.
     /// </summary>
     /// <param name="reader">The reader to deserialize from.</param>
@@ -151,6 +156,8 @@ public partial record BankTransaction(DateTime Date, decimal Amount)
 
             splits = splitsBuilder.ToImmutable();
         }
+
+        reader.ReadEndOfRecord();
 
         return new(
             ValueOrThrow(date, FieldNames.Date),

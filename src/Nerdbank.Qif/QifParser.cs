@@ -14,6 +14,7 @@ namespace Nerdbank.Qif;
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
 public class QifParser : IDisposable
 {
+    private static readonly char[] Whitespace = new[] { '\t', ' ' };
     private readonly TextReader reader;
     private int lineNumber;
 
@@ -106,7 +107,7 @@ public class QifParser : IDisposable
                 int colonIndex = line.IndexOf(':');
                 this.CurrentHeader = colonIndex < 0
                     ? (line.AsMemory(1), default)
-                    : (line.AsMemory(1, colonIndex - 1), line.AsMemory(colonIndex + 1));
+                    : (line.AsMemory(1, colonIndex - 1), TrimEnd(line.AsMemory(colonIndex + 1)));
                 break;
             case '^':
                 ThrowIfNot(line.Length == 1, this.lineNumber, "End of record line too long");
@@ -115,12 +116,41 @@ public class QifParser : IDisposable
             case 'X':
                 ThrowIfNot(line.Length >= 2, this.lineNumber, "Line too short.");
                 this.Kind = TokenKind.Field;
-                this.Field = (line.AsMemory(0, 2), line.AsMemory(2));
+                this.Field = (line.AsMemory(0, 2), TrimEnd(line.AsMemory(2)));
                 break;
             default:
                 this.Kind = TokenKind.Field;
-                this.Field = (line.AsMemory(0, 1), line.AsMemory(1));
+                this.Field = (line.AsMemory(0, 1), TrimEnd(line.AsMemory(1)));
                 break;
+        }
+
+        static ReadOnlyMemory<char> TrimEnd(ReadOnlyMemory<char> value)
+        {
+            int trailingWhitespaceCharacterCount = 0;
+            ReadOnlySpan<char> span = value.Span;
+            for (int i = span.Length - 1; i >= 0; i--)
+            {
+                bool wasWhitespaceDetected = false;
+                for (int j = 0; j < Whitespace.Length; j++)
+                {
+                    if (span[i] == Whitespace[j])
+                    {
+                        wasWhitespaceDetected = true;
+                        break;
+                    }
+                }
+
+                if (wasWhitespaceDetected)
+                {
+                    trailingWhitespaceCharacterCount++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return value.Slice(0, value.Length - trailingWhitespaceCharacterCount);
         }
 
         return this.Kind;

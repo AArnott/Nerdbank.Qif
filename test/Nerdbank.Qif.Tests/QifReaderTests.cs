@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Andrew Arnott. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Globalization;
+
 public class QifReaderTests : TestBase
 {
     public QifReaderTests(ITestOutputHelper logger)
@@ -214,6 +216,15 @@ public class QifReaderTests : TestBase
         Assert.True(TrySkipToType(reader, "Bank"));
         Assert.True(TrySkipToField(reader, "T"));
         Assert.Equal(1500m, reader.ReadFieldAsDecimal());
+    }
+
+    [Fact]
+    public void FormatProviderDefaultsToCurrentCulture()
+    {
+        using (new CultureContext("en-MX"))
+        {
+            Assert.Same(CultureInfo.CurrentCulture, new QifReader(new StringReader(string.Empty)).FormatProvider);
+        }
     }
 
     private static bool TrySkipToType(QifReader reader, string type)

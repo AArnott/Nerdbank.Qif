@@ -25,10 +25,10 @@ LDining
             parser = QifDocument.Load(reader);
         }
 
-        BasicTransaction? transaction = parser.CreditCardTransactions[0];
+        BankTransaction? transaction = parser.CreditCardTransactions[0];
         Assert.Equal(new DateTime(2018, 1, 31), transaction.Date);
         Assert.Equal(-6.25M, transaction.Amount);
-        Assert.Equal("X", transaction.ClearedStatus);
+        Assert.Equal(ClearedState.Reconciled, transaction.ClearedStatus);
         Assert.Equal("Starbucks", transaction.Payee);
         Assert.Equal("Coffee & cake", transaction.Memo);
         Assert.Equal("Dining", transaction.Category);
@@ -52,31 +52,26 @@ ECake
 $-3.50
 ^";
 
-        QifDocument? parser = null;
-        using (new CultureContext(new CultureInfo("en-GB")))
-        using (var reader = new StringReader(sample))
-        {
-            parser = QifDocument.Load(reader);
-        }
+        QifDocument doc = QifDocument.Load(new QifReader(new StringReader(sample)) { FormatProvider = new CultureInfo("en-GB") });
 
-        BasicTransaction? transaction = parser.CreditCardTransactions[0];
+        BankTransaction transaction = doc.CreditCardTransactions[0];
 
         // Transaction values.
         Assert.Equal(new DateTime(2018, 1, 31), transaction.Date);
         Assert.Equal(-6.25M, transaction.Amount);
-        Assert.Equal("X", transaction.ClearedStatus);
+        Assert.Equal(ClearedState.Reconciled, transaction.ClearedStatus);
         Assert.Equal("Caffe Nero", transaction.Payee);
         Assert.Equal("Dining", transaction.Category);
 
         // Split 1.
-        Assert.Equal("Dining", transaction.SplitCategories[0]);
-        Assert.Equal("Coffee", transaction.SplitMemos[0]);
-        Assert.Equal(-2.75M, transaction.SplitAmounts[0]);
+        Assert.Equal("Dining", transaction.Splits[0].Category);
+        Assert.Equal("Coffee", transaction.Splits[0].Memo);
+        Assert.Equal(-2.75M, transaction.Splits[0].Amount);
 
         // Split 2.
-        Assert.Equal("Dining", transaction.SplitCategories[1]);
-        Assert.Equal("Cake", transaction.SplitMemos[1]);
-        Assert.Equal(-3.50M, transaction.SplitAmounts[1]);
+        Assert.Equal("Dining", transaction.Splits[1].Category);
+        Assert.Equal("Cake", transaction.Splits[1].Memo);
+        Assert.Equal(-3.50M, transaction.Splits[1].Amount);
     }
 
     [Fact]
@@ -94,8 +89,8 @@ DMyClassDescription
             parser = QifDocument.Load(reader);
         }
 
-        ClassListTransaction? @class = parser.ClassListTransactions[0];
-        Assert.Equal("MyClassName", @class.ClassName);
+        Class? @class = parser.Classes[0];
+        Assert.Equal("MyClassName", @class.Name);
         Assert.Equal("MyClassDescription", @class.Description);
     }
 
@@ -116,8 +111,8 @@ I
             parser = QifDocument.Load(reader);
         }
 
-        CategoryListTransaction? category = parser.CategoryListTransactions[0];
-        Assert.Equal("Employment", category.CategoryName);
+        Category? category = parser.Categories[0];
+        Assert.Equal("Employment", category.Name);
         Assert.Equal("Employment income", category.Description);
         Assert.True(category.IncomeCategory);
         Assert.False(category.ExpenseCategory);
@@ -153,7 +148,7 @@ LRent
             parser = QifDocument.Load(reader);
         }
 
-        Assert.Single(parser.AccountListTransactions);
+        Assert.Single(parser.Accounts);
         Assert.Single(parser.BankTransactions);
         Assert.Equal("Bank Account 1", parser.BankTransactions[0].AccountName);
     }
@@ -162,10 +157,7 @@ LRent
     public void CanExport()
     {
         var dom = new QifDocument();
-        dom.AccountListTransactions.Add(new AccountListTransaction()
-        {
-            Name = "Account1",
-        });
+        dom.Accounts.Add(new Account("Account1"));
 
         StringWriter exported = new();
         using (new CultureContext(new CultureInfo("en-GB")))

@@ -9,7 +9,7 @@ namespace Nerdbank.Qif;
 /// An investment transaction.
 /// </summary>
 /// <param name="Date">The date of the transaction.</param>
-public record NewInvestmentTransaction(DateTime Date)
+public record InvestmentTransaction(DateTime Date)
 {
     /// <summary>
     /// Gets the action.
@@ -71,7 +71,7 @@ public record NewInvestmentTransaction(DateTime Date)
     /// </summary>
     /// <param name="reader">The reader to deserialize from.</param>
     /// <returns>The deserialized record.</returns>
-    public static NewInvestmentTransaction Load(QifReader reader)
+    public static InvestmentTransaction Load(QifReader reader)
     {
         DateTime? date = null;
         ClearedState clearedStatus = ClearedState.None;
@@ -136,6 +136,8 @@ public record NewInvestmentTransaction(DateTime Date)
                 amountTransferred = reader.ReadFieldAsDecimal();
             }
         }
+
+        reader.ReadEndOfRecord();
 
         return new(
             ValueOrThrow(date, FieldNames.Date))

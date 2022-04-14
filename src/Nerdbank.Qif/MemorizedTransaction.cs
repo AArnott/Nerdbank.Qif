@@ -163,6 +163,8 @@ public record MemorizedTransaction(MemorizedTransactionType Type, DateTime Date,
             splits = splitsBuilder.ToImmutable();
         }
 
+        reader.ReadEndOfRecord();
+
         return new(
             ValueOrThrow(type, FieldNames.Type),
             ValueOrThrow(date, FieldNames.Date),
