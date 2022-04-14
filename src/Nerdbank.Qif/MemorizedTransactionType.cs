@@ -6,7 +6,7 @@ namespace Nerdbank.Qif;
 /// <summary>
 /// Memorized transaction types.
 /// </summary>
-public enum TransactionType
+public enum MemorizedTransactionType
 {
     /// <summary>
     /// A check transaction type.

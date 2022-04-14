@@ -95,7 +95,7 @@ internal static class MemorizedTransactionListLogic
                         break;
                     case MemorizedTransactionListFields.CheckTransaction:
                         // Set the date value
-                        mtlt.Type = TransactionType.Check;
+                        mtlt.Type = MemorizedTransactionType.Check;
 
                         // Stop processing
                         break;
@@ -107,19 +107,19 @@ internal static class MemorizedTransactionListLogic
                         break;
                     case MemorizedTransactionListFields.DepositTransaction:
                         // Set the date value
-                        mtlt.Type = TransactionType.Deposit;
+                        mtlt.Type = MemorizedTransactionType.Deposit;
 
                         // Stop processing
                         break;
                     case MemorizedTransactionListFields.ElectronicPayeeTransaction:
                         // Set the amount value
-                        mtlt.Type = TransactionType.ElectronicPayee;
+                        mtlt.Type = MemorizedTransactionType.ElectronicPayee;
 
                         // Stop processing
                         break;
                     case MemorizedTransactionListFields.InvestmentTransaction:
                         // Set the date value
-                        mtlt.Type = TransactionType.Investment;
+                        mtlt.Type = MemorizedTransactionType.Investment;
 
                         // Stop processing
                         break;
@@ -137,7 +137,7 @@ internal static class MemorizedTransactionListLogic
                         break;
                     case MemorizedTransactionListFields.PaymentTransaction:
                         // Set the amount value
-                        mtlt.Type = TransactionType.Payment;
+                        mtlt.Type = MemorizedTransactionType.Payment;
 
                         // Stop processing
                         break;
@@ -241,19 +241,19 @@ internal static class MemorizedTransactionListLogic
 
                 switch (item.Type)
                 {
-                    case TransactionType.Check:
+                    case MemorizedTransactionType.Check:
                         writer.WriteLine(MemorizedTransactionListFields.CheckTransaction);
                         break;
-                    case TransactionType.Deposit:
+                    case MemorizedTransactionType.Deposit:
                         writer.WriteLine(MemorizedTransactionListFields.DepositTransaction);
                         break;
-                    case TransactionType.ElectronicPayee:
+                    case MemorizedTransactionType.ElectronicPayee:
                         writer.WriteLine(MemorizedTransactionListFields.ElectronicPayeeTransaction);
                         break;
-                    case TransactionType.Investment:
+                    case MemorizedTransactionType.Investment:
                         writer.WriteLine(MemorizedTransactionListFields.InvestmentTransaction);
                         break;
-                    case TransactionType.Payment:
+                    case MemorizedTransactionType.Payment:
                         writer.WriteLine(MemorizedTransactionListFields.PaymentTransaction);
                         break;
                 }

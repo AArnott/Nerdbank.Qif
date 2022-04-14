@@ -21,7 +21,7 @@ public class MemorizedTransactionListTransaction : BasicTransaction
     /// Gets or sets the transaction type.
     /// </summary>
     /// <value>The transaction type.</value>
-    public TransactionType Type { get; set; }
+    public MemorizedTransactionType Type { get; set; }
 
     /// <summary>
     /// Gets or sets the amortization current loan balance.
