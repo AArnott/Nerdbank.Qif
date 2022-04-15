@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using System.Dynamic;
 using System.Globalization;
 
 public class QifSerializerTests : TestBase
@@ -391,8 +392,12 @@ DA bonus
     }
 
     [Fact]
-    public void Write_Class_Exhaustive()
+    public void Write_Class()
     {
+        this.AssertSerialized(
+            new Class("my name"),
+            "Nmy name\n^\n",
+            this.serializer.Write);
         this.AssertSerialized(
             new Class("my name") { Description = "my description" },
             "Nmy name\nDmy description\n^\n",
@@ -400,11 +405,15 @@ DA bonus
     }
 
     [Fact]
-    public void Write_Class_Minimal()
+    public void Write_Category()
     {
         this.AssertSerialized(
-            new Class("my name"),
+            new Category("my name"),
             "Nmy name\n^\n",
+            this.serializer.Write);
+        this.AssertSerialized(
+            new Category("my name") { BudgetAmount = 10, Description = "desc", ExpenseCategory = true, IncomeCategory = true, TaxRelated = true, TaxSchedule = "S" },
+            "Nmy name\nDdesc\nT\nRS\nE\nI\nB10\n^\n",
             this.serializer.Write);
     }
 
@@ -473,6 +482,133 @@ DA bonus
             this.serializer.Write);
     }
 
+    [Fact]
+    public void Write_Document()
+    {
+        QifDocument document = new()
+        {
+            Accounts =
+            {
+                new Account("Account1"),
+                new Account("Account2"),
+            },
+            AssetTransactions =
+            {
+                new BankTransaction(Date, 1),
+                new BankTransaction(Date, 2),
+            },
+            LiabilityTransactions =
+            {
+                new BankTransaction(Date, 3),
+                new BankTransaction(Date, 4),
+            },
+            CashTransactions =
+            {
+                new BankTransaction(Date, 5),
+                new BankTransaction(Date, 6),
+            },
+            CreditCardTransactions =
+            {
+                new BankTransaction(Date, 7),
+                new BankTransaction(Date, 8),
+            },
+            BankTransactions =
+            {
+                new BankTransaction(Date, 9),
+                new BankTransaction(Date, 10),
+            },
+            MemorizedTransactions =
+            {
+                new MemorizedTransaction(MemorizedTransactionType.Deposit, Date, 10),
+                new MemorizedTransaction(MemorizedTransactionType.Deposit, Date2, 10),
+            },
+            InvestmentTransactions =
+            {
+                new InvestmentTransaction(Date),
+                new InvestmentTransaction(Date2),
+            },
+            Categories =
+            {
+                new Category("cat1"),
+                new Category("cat2"),
+            },
+            Classes =
+            {
+                new Class("class1"),
+                new Class("class2"),
+            },
+        };
+        string qifSource = @"!Account
+NAccount1
+^
+NAccount2
+^
+!Type:Bank
+D02/03/2013
+T9
+^
+D02/03/2013
+T10
+^
+!Type:Oth A
+D02/03/2013
+T1
+^
+D02/03/2013
+T2
+^
+!Type:Oth L
+D02/03/2013
+T3
+^
+D02/03/2013
+T4
+^
+!Type:Cash
+D02/03/2013
+T5
+^
+D02/03/2013
+T6
+^
+!Type:CCard
+D02/03/2013
+T7
+^
+D02/03/2013
+T8
+^
+!Type:Invst
+D02/03/2013
+^
+D02/04/2013
+^
+!Type:Memorized
+KD
+D02/03/2013
+T10
+^
+KD
+D02/04/2013
+T10
+^
+!Type:Cat
+Ncat1
+^
+Ncat2
+^
+!Type:Class
+Nclass1
+^
+Nclass2
+^
+";
+        this.AssertSerialized(
+            document,
+            qifSource,
+            this.serializer.Write);
+    }
+
     private static T Read<T>(string qifSource, Func<QifReader, T> readMethod, string? culture = null)
     {
         using QifReader reader = new(new StringReader(qifSource))
@@ -487,6 +623,6 @@ DA bonus
         this.stringWriter.GetStringBuilder().Clear();
         this.qifWriter.FormatProvider = culture is null ? CultureInfo.InvariantCulture : new CultureInfo(culture);
         recordWriter(this.qifWriter, record);
-        Assert.Equal(expected, this.stringWriter.ToString());
+        Assert.Equal(expected.Replace("\r\n", "\n"), this.stringWriter.ToString());
     }
 }

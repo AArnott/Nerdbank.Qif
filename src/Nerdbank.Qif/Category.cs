@@ -34,7 +34,7 @@ public record Category(string Name)
     /// <summary>
     /// Gets the budget amount.
     /// </summary>
-    public decimal BudgetAmount { get; init; }
+    public decimal? BudgetAmount { get; init; }
 
     /// <summary>
     /// Gets the tax schedule.

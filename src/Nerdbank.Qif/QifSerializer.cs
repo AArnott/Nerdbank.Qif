@@ -23,8 +23,12 @@ public class QifSerializer
         WriteRecord("Type", "Bank", value.BankTransactions, this.Write);
         WriteRecord("Type", "Oth A", value.AssetTransactions, this.Write);
         WriteRecord("Type", "Oth L", value.LiabilityTransactions, this.Write);
+        WriteRecord("Type", "Cash", value.CashTransactions, this.Write);
+        WriteRecord("Type", "CCard", value.CreditCardTransactions, this.Write);
+        WriteRecord("Type", "Invst", value.InvestmentTransactions, this.Write);
+        WriteRecord("Type", "Memorized", value.MemorizedTransactions, this.Write);
         WriteRecord("Type", "Cat", value.Categories, this.Write);
-        // More here
+        WriteRecord("Type", "Class", value.Classes, this.Write);
 
         void WriteRecord<T>(string headerName, string? headerValue, IReadOnlyCollection<T> records, Action<QifWriter, T> recordWriter)
         {
@@ -519,7 +523,7 @@ public class QifSerializer
     public virtual void Write(QifWriter writer, Category value)
     {
         writer.WriteField(Category.FieldNames.Name, value.Name);
-        writer.WriteField(Category.FieldNames.TaxRelated, value.Description);
+        writer.WriteField(Category.FieldNames.Description, value.Description);
         writer.WriteFieldIf(Category.FieldNames.TaxRelated, value.TaxRelated);
         writer.WriteField(Category.FieldNames.TaxSchedule, value.TaxSchedule);
         writer.WriteFieldIf(Category.FieldNames.ExpenseCategory, value.ExpenseCategory);
