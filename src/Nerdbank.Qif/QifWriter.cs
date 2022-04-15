@@ -45,12 +45,27 @@ public class QifWriter
     }
 
     /// <summary>
+    /// Emits a field such as <c>N</c>.
+    /// </summary>
+    /// <param name="name">The name of the field (e.g. "N").</param>
+    public void WriteField(string name)
+    {
+        this.writer.WriteLine(name);
+    }
+
+    /// <summary>
     /// Emits a field such as <c>NSome Name</c>.
     /// </summary>
     /// <param name="name">The name of the field (e.g. "N").</param>
     /// <param name="value">The value of the field (e.g. "Checking").</param>
-    public void WriteField(string name, string? value = null)
+    /// <remarks>Nothing is written when <paramref name="value"/> is <see langword="null"/>.</remarks>
+    public void WriteField(string name, string? value)
     {
+        if (value is null)
+        {
+            return;
+        }
+
         this.writer.Write(name);
         this.writer.WriteLine(value);
     }
@@ -88,38 +103,60 @@ public class QifWriter
     }
 
     /// <inheritdoc cref="WriteField(string, string?)"/>
-    public void WriteField(string name, DateTime value)
+    public virtual void WriteField(string name, DateTime? value)
     {
-        Span<char> buffer = stackalloc char[20];
-        Assumes.True(value.TryFormat(buffer, out int charsWritten, "d", this.FormatProvider));
-        this.WriteField(name, buffer.Slice(0, charsWritten));
-    }
-
-    /// <inheritdoc cref="WriteField(string, string?)"/>
-    public void WriteField(string name, long value)
-    {
-        Span<char> buffer = stackalloc char[100];
-        Assumes.True(value.TryFormat(buffer, out int charsWritten, provider: this.FormatProvider));
-        this.WriteField(name, buffer.Slice(0, charsWritten));
-    }
-
-    /// <inheritdoc cref="WriteField(string, string?)"/>
-    public void WriteField(string name, decimal value)
-    {
-        Span<char> buffer = stackalloc char[100];
-        Assumes.True(value.TryFormat(buffer, out int charsWritten, provider: this.FormatProvider));
-        this.WriteField(name, buffer.Slice(0, charsWritten));
-    }
-
-    /// <inheritdoc cref="WriteField(string, string?)"/>
-    public void WriteField(string name, ClearedState value)
-    {
-        string valueAsString = value switch
+        if (value is null)
         {
-            ClearedState.Cleared => "C",
-            ClearedState.Reconciled => "R",
-            _ => throw new ArgumentException("Only Cleared and Reconciled states should be written."),
-        };
-        this.WriteField(name, valueAsString);
+            return;
+        }
+
+        Span<char> buffer = stackalloc char[20];
+        Assumes.True(value.Value.TryFormat(buffer, out int charsWritten, "d", this.FormatProvider));
+        this.WriteField(name, buffer.Slice(0, charsWritten));
+    }
+
+    /// <inheritdoc cref="WriteField(string, string?)"/>
+    public virtual void WriteField(string name, long? value)
+    {
+        if (value is null)
+        {
+            return;
+        }
+
+        Span<char> buffer = stackalloc char[100];
+        Assumes.True(value.Value.TryFormat(buffer, out int charsWritten, provider: this.FormatProvider));
+        this.WriteField(name, buffer.Slice(0, charsWritten));
+    }
+
+    /// <inheritdoc cref="WriteField(string, string?)"/>
+    public virtual void WriteField(string name, decimal? value)
+    {
+        if (value is null)
+        {
+            return;
+        }
+
+        Span<char> buffer = stackalloc char[100];
+        Assumes.True(value.Value.TryFormat(buffer, out int charsWritten, provider: this.FormatProvider));
+        this.WriteField(name, buffer.Slice(0, charsWritten));
+    }
+
+    /// <inheritdoc cref="WriteField(string, string?)"/>
+    public virtual void WriteField(string name, ClearedState value)
+    {
+        switch (value)
+        {
+            case ClearedState.None:
+                // There is no encoding for this value. The lack of an encoding implies this value.
+                break;
+            case ClearedState.Cleared:
+                this.WriteField(name, "C");
+                break;
+            case ClearedState.Reconciled:
+                this.WriteField(name, "R");
+                break;
+            default:
+                throw new ArgumentException();
+        }
     }
 }

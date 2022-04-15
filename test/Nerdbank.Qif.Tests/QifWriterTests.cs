@@ -47,6 +47,8 @@ public class QifWriterTests : TestBase
     {
         this.writer.WriteField("N", "Checking");
         this.AssertWritten("NChecking\n");
+        this.writer.WriteField("N", (string?)null);
+        this.AssertWritten(string.Empty);
     }
 
     [Fact]
@@ -54,6 +56,8 @@ public class QifWriterTests : TestBase
     {
         this.writer.WriteField("N", "Checking".AsSpan());
         this.AssertWritten("NChecking\n");
+        this.writer.WriteField("D", (DateTime?)null);
+        this.AssertWritten(string.Empty);
     }
 
     [Fact]
@@ -68,6 +72,8 @@ public class QifWriterTests : TestBase
     {
         this.writer.WriteField("D", 35L);
         this.AssertWritten("D35\n");
+        this.writer.WriteField("D", (long?)null);
+        this.AssertWritten(string.Empty);
     }
 
     [Fact]
@@ -75,6 +81,8 @@ public class QifWriterTests : TestBase
     {
         this.writer.WriteField("D", 35.5m);
         this.AssertWritten("D35.5\n");
+        this.writer.WriteField("D", (decimal?)null);
+        this.AssertWritten(string.Empty);
     }
 
     [Fact]
@@ -82,7 +90,15 @@ public class QifWriterTests : TestBase
     {
         this.writer.WriteField("D", ClearedState.Cleared);
         this.AssertWritten("DC\n");
+        this.writer.WriteField("D", ClearedState.Reconciled);
+        this.AssertWritten("DR\n");
+        this.writer.WriteField("D", ClearedState.None);
+        this.AssertWritten(string.Empty);
     }
 
-    private void AssertWritten(string qif) => Assert.Equal(qif, this.stringWriter.ToString());
+    private void AssertWritten(string qif)
+    {
+        Assert.Equal(qif, this.stringWriter.ToString());
+        this.stringWriter.GetStringBuilder().Clear();
+    }
 }
