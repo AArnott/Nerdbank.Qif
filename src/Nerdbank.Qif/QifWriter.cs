@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Andrew Arnott. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Globalization;
+
 namespace Nerdbank.Qif;
 
 /// <summary>
@@ -18,6 +20,11 @@ public class QifWriter
     {
         this.writer = writer ?? throw new ArgumentNullException(nameof(writer));
     }
+
+    /// <summary>
+    /// Gets or sets the format provider that will be used to serialize certain data types.
+    /// </summary>
+    public IFormatProvider FormatProvider { get; set; } = CultureInfo.CurrentCulture;
 
     /// <summary>
     /// Emits a header such as <c>!Type:Bank</c>.
@@ -57,5 +64,41 @@ public class QifWriter
     {
         this.writer.Write(name);
         this.writer.WriteLine(value);
+    }
+
+    /// <inheritdoc cref="WriteField(string, string?)"/>
+    public void WriteField(string name, DateTime value)
+    {
+        Span<char> buffer = stackalloc char[20];
+        Assumes.True(value.TryFormat(buffer, out int charsWritten, "d", this.FormatProvider));
+        this.WriteField(name, buffer.Slice(0, charsWritten));
+    }
+
+    /// <inheritdoc cref="WriteField(string, string?)"/>
+    public void WriteField(string name, long value)
+    {
+        Span<char> buffer = stackalloc char[100];
+        Assumes.True(value.TryFormat(buffer, out int charsWritten, provider: this.FormatProvider));
+        this.WriteField(name, buffer.Slice(0, charsWritten));
+    }
+
+    /// <inheritdoc cref="WriteField(string, string?)"/>
+    public void WriteField(string name, decimal value)
+    {
+        Span<char> buffer = stackalloc char[100];
+        Assumes.True(value.TryFormat(buffer, out int charsWritten, provider: this.FormatProvider));
+        this.WriteField(name, buffer.Slice(0, charsWritten));
+    }
+
+    /// <inheritdoc cref="WriteField(string, string?)"/>
+    public void WriteField(string name, ClearedState value)
+    {
+        string valueAsString = value switch
+        {
+            ClearedState.Cleared => "C",
+            ClearedState.Reconciled => "R",
+            _ => throw new ArgumentException("Only Cleared and Reconciled states should be written."),
+        };
+        this.WriteField(name, valueAsString);
     }
 }
