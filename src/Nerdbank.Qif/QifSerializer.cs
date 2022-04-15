@@ -142,9 +142,13 @@ public class QifSerializer
                 }
                 else if (QifUtilities.Equals("Account", headerName))
                 {
-                    Account account = this.ReadAccount(reader);
-                    lastAccountRead = account;
-                    result.Accounts.Add(account);
+                    do
+                    {
+                        Account account = this.ReadAccount(reader);
+                        lastAccountRead = account;
+                        result.Accounts.Add(account);
+                    }
+                    while (reader.Kind == QifParser.TokenKind.Field);
                 }
                 else
                 {

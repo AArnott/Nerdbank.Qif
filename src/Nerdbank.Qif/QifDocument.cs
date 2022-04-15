@@ -11,13 +11,6 @@ namespace Nerdbank.Qif;
 public class QifDocument
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="QifDocument"/> class.
-    /// </summary>
-    public QifDocument()
-    {
-    }
-
-    /// <summary>
     /// Gets a collection of bank transactions.
     /// </summary>
     public List<BankTransaction> BankTransactions { get; private set; } = new();
