@@ -221,9 +221,15 @@ public class QifReaderTests : TestBase
     [Fact]
     public void FormatProviderDefaultsToCurrentCulture()
     {
-        using (new CultureContext("en-MX"))
+        CultureInfo original = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = new CultureInfo("en-MX");
+        try
         {
             Assert.Same(CultureInfo.CurrentCulture, new QifReader(new StringReader(string.Empty)).FormatProvider);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
         }
     }
 
