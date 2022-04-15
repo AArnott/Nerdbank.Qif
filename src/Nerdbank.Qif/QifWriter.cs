@@ -56,6 +56,27 @@ public class QifWriter
     }
 
     /// <summary>
+    /// Writes the <see cref="QifParser.TokenKind.EndOfRecord"/> token.
+    /// </summary>
+    public void WriteEndOfRecord()
+    {
+        this.writer.WriteLine("^");
+    }
+
+    /// <summary>
+    /// Emits a field such as <c>NSome Name</c> if the value is not <see langword="null" /> or empty.
+    /// </summary>
+    /// <param name="name">The name of the field (e.g. "N").</param>
+    /// <param name="value">The value of the field (e.g. "Checking").</param>
+    public void WriteFieldIfNotEmpty(string name, string? value)
+    {
+        if (!string.IsNullOrEmpty(value))
+        {
+            this.WriteField(name, value);
+        }
+    }
+
+    /// <summary>
     /// Emits a field such as <c>NSome Name</c>.
     /// </summary>
     /// <param name="name">The name of the field (e.g. "N").</param>

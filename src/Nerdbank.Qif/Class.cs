@@ -43,6 +43,17 @@ public record Class(string Name)
         };
     }
 
+    /// <summary>
+    /// Saves this record in QIF format.
+    /// </summary>
+    /// <param name="writer">The writer to serialize to.</param>
+    public void Save(QifWriter writer)
+    {
+        writer.WriteField(FieldNames.Name, this.Name);
+        writer.WriteFieldIfNotEmpty(FieldNames.Description, this.Description);
+        writer.WriteEndOfRecord();
+    }
+
     private static class FieldNames
     {
         internal const string Name = "N";
