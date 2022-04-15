@@ -19,7 +19,24 @@ public class QifSerializer
     /// <param name="value">The document to be serialized.</param>
     public virtual void Write(QifWriter writer, QifDocument value)
     {
-        throw new NotImplementedException();
+        WriteRecord("Account", null, value.Accounts, this.Write);
+        WriteRecord("Type", "Bank", value.BankTransactions, this.Write);
+        WriteRecord("Type", "Oth A", value.AssetTransactions, this.Write);
+        WriteRecord("Type", "Oth L", value.LiabilityTransactions, this.Write);
+        WriteRecord("Type", "Cat", value.Categories, this.Write);
+        // More here
+
+        void WriteRecord<T>(string headerName, string? headerValue, IReadOnlyCollection<T> records, Action<QifWriter, T> recordWriter)
+        {
+            if (records.Count > 0)
+            {
+                writer.WriteHeader(headerName, headerValue);
+                foreach (T record in records)
+                {
+                    recordWriter(writer, record);
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -439,7 +456,14 @@ public class QifSerializer
     /// <inheritdoc cref="Write(QifWriter, Class)" />
     public virtual void Write(QifWriter writer, Category value)
     {
-        throw new NotImplementedException();
+        writer.WriteField(Category.FieldNames.Name, value.Name);
+        writer.WriteField(Category.FieldNames.TaxRelated, value.Description);
+        writer.WriteFieldIf(Category.FieldNames.TaxRelated, value.TaxRelated);
+        writer.WriteField(Category.FieldNames.TaxSchedule, value.TaxSchedule);
+        writer.WriteFieldIf(Category.FieldNames.ExpenseCategory, value.ExpenseCategory);
+        writer.WriteFieldIf(Category.FieldNames.IncomeCategory, value.IncomeCategory);
+        writer.WriteField(Category.FieldNames.BudgetAmount, value.BudgetAmount);
+        writer.WriteEndOfRecord();
     }
 
     /// <summary>
@@ -600,7 +624,13 @@ public class QifSerializer
     /// <inheritdoc cref="Write(QifWriter, Class)" />
     public virtual void Write(QifWriter writer, Account value)
     {
-        throw new NotImplementedException();
+        writer.WriteField(Account.FieldNames.Name, value.Name);
+        writer.WriteField(Account.FieldNames.Type, value.Type);
+        writer.WriteField(Account.FieldNames.Description, value.Description);
+        writer.WriteField(Account.FieldNames.CreditLimit, value.CreditLimit);
+        writer.WriteField(Account.FieldNames.StatementBalanceDate, value.StatementBalanceDate);
+        writer.WriteField(Account.FieldNames.StatementBalance, value.StatementBalance);
+        writer.WriteEndOfRecord();
     }
 
     /// <summary>

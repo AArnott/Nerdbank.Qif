@@ -157,7 +157,7 @@ LRent
     public void CanExport()
     {
         var dom = new QifDocument();
-        dom.Accounts.Add(new Account("Account1"));
+        dom.Accounts.Add(new Account("Account1") { CreditLimit = 0, StatementBalance = 0 });
 
         StringWriter exported = new();
         using (new CultureContext(new CultureInfo("en-GB")))
@@ -167,10 +167,9 @@ LRent
 
         System.Diagnostics.Debug.WriteLine(exported);
         string? expected = @"!Account
-L0
 NAccount1
+L0
 $0
-/01/01/0001
 ^
 ";
         Assert.Equal(expected, exported.ToString());

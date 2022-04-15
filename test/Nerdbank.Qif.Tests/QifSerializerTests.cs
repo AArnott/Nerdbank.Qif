@@ -4,7 +4,7 @@
 public class QifSerializerTests : TestBase
 {
     private readonly QifSerializer serializer = new QifSerializer();
-    private readonly StringWriter stringWriter = new();
+    private readonly StringWriter stringWriter = new() { NewLine = "\n" };
     private readonly QifWriter qifWriter;
 
     public QifSerializerTests(ITestOutputHelper logger)
@@ -344,26 +344,34 @@ DA bonus
     [Fact]
     public void Write_Class_Exhaustive()
     {
-        Class clazz = new("my name")
-        {
-            Description = "my description",
-        };
-        string expected = @"Nmy name
-Dmy description
-^
-";
-        this.serializer.Write(this.qifWriter, clazz);
-        Assert.Equal(expected, this.stringWriter.ToString());
+        this.AssertSerialized(
+            new Class("my name") { Description = "my description" },
+            "Nmy name\nDmy description\n^\n",
+            this.serializer.Write);
     }
 
     [Fact]
     public void Write_Class_Minimal()
     {
-        Class clazz = new("my name");
-        string expected = @"Nmy name
-^
-";
-        this.serializer.Write(this.qifWriter, clazz);
+        this.AssertSerialized(
+            new Class("my name"),
+            "Nmy name\n^\n",
+            this.serializer.Write);
+    }
+
+    [Fact]
+    public void Write_Account_Minimal()
+    {
+        this.AssertSerialized(
+            new Account("Account1"),
+            "NAccount1\n^\n",
+            this.serializer.Write);
+    }
+
+    private void AssertSerialized<T>(T record, string expected, Action<QifWriter, T> recordWriter)
+    {
+        this.stringWriter.GetStringBuilder().Clear();
+        recordWriter(this.qifWriter, record);
         Assert.Equal(expected, this.stringWriter.ToString());
     }
 }

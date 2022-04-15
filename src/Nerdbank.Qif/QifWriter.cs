@@ -79,6 +79,19 @@ public class QifWriter
     }
 
     /// <summary>
+    /// Emits a field such as <c>T</c> if some expression is <see langword="true"/>.
+    /// </summary>
+    /// <param name="name">The name of the field (e.g. "N").</param>
+    /// <param name="condition">The condition that determines whether this method does anything.</param>
+    public void WriteFieldIf(string name, bool condition)
+    {
+        if (condition)
+        {
+            this.WriteField(name);
+        }
+    }
+
+    /// <summary>
     /// Emits a field such as <c>NSome Name</c> if the value is not <see langword="null" /> or empty.
     /// </summary>
     /// <param name="name">The name of the field (e.g. "N").</param>
