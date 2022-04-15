@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Andrew Arnott. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Globalization;
+
 public class QifSerializerTests : TestBase
 {
     private readonly QifSerializer serializer = new QifSerializer();
@@ -10,22 +12,39 @@ public class QifSerializerTests : TestBase
     public QifSerializerTests(ITestOutputHelper logger)
         : base(logger)
     {
-        this.qifWriter = new(this.stringWriter);
+        this.qifWriter = new(this.stringWriter) { FormatProvider = CultureInfo.InvariantCulture };
     }
 
     [Fact]
     public void ReadBankTransaction_Simple()
     {
-        const string qifSource = @"D1/1/2008
+        const string qifSource = @"D1/2/2008
 T1500
 N123
 PPaycheck
 LIncome.Salary
 ^
 ";
-        using QifReader reader = new(new StringReader(qifSource));
-        BankTransaction transaction = this.serializer.ReadBankTransaction(reader);
-        Assert.Equal(new DateTime(2008, 1, 1), transaction.Date);
+        BankTransaction transaction = Read(qifSource, this.serializer.ReadBankTransaction);
+        Assert.Equal(new DateTime(2008, 1, 2), transaction.Date);
+        Assert.Equal(1500, transaction.Amount);
+        Assert.Equal("123", transaction.Number);
+        Assert.Equal("Paycheck", transaction.Payee);
+        Assert.Equal("Income.Salary", transaction.Category);
+    }
+
+    [Fact]
+    public void ReadBankTransaction_Uk()
+    {
+        const string qifSource = @"D2/1/2008
+T1500
+N123
+PPaycheck
+LIncome.Salary
+^
+";
+        BankTransaction transaction = Read(qifSource, this.serializer.ReadBankTransaction, "en-GB");
+        Assert.Equal(new DateTime(2008, 1, 2), transaction.Date);
         Assert.Equal(1500, transaction.Amount);
         Assert.Equal("123", transaction.Number);
         Assert.Equal("Paycheck", transaction.Payee);
@@ -56,8 +75,7 @@ ESplit3Memo
 $500
 ^
 ";
-        using QifReader reader = new(new StringReader(qifSource));
-        BankTransaction transaction = this.serializer.ReadBankTransaction(reader);
+        BankTransaction transaction = Read(qifSource, this.serializer.ReadBankTransaction);
         Assert.Equal(1500, transaction.Amount);
         Assert.Equal("123", transaction.Number);
         Assert.Equal(ClearedState.Cleared, transaction.ClearedStatus);
@@ -86,10 +104,36 @@ ZNotta # unrecognized field that should be skipped over
 LIncome.Salary
 ^
 ";
-        using QifReader reader = new(new StringReader(qifSource));
-        BankTransaction transaction = this.serializer.ReadBankTransaction(reader);
+        BankTransaction transaction = Read(qifSource, this.serializer.ReadBankTransaction);
         Assert.Equal("Paycheck", transaction.Payee);
         Assert.Equal("Income.Salary", transaction.Category);
+    }
+
+    /// <summary>
+    /// Quicken may preceed bank transactions with the account details to indicate those transactions belong to that account.
+    /// </summary>
+    [Fact]
+    public void CanImportAccountWithTransactions()
+    {
+        string qifSource = @"!Clear:AutoSwitch
+!Option:AutoSwitch
+!Account
+NBank Account 1
+TBank
+^
+!Type:Bank 
+D01/1/18
+U-400.00
+T-400.00
+CX
+NCard
+PMr Land Lord
+LRent
+^";
+        QifDocument document = Read(qifSource, this.serializer.ReadDocument);
+        Assert.Single(document.Accounts);
+        Assert.Single(document.BankTransactions);
+        Assert.Equal("Bank Account 1", document.BankTransactions[0].AccountName);
     }
 
     [Fact]
@@ -103,8 +147,7 @@ LIncome.Salary
 KE
 ^
 ";
-        using QifReader reader = new(new StringReader(qifSource));
-        MemorizedTransaction transaction = this.serializer.ReadMemorizedTransaction(reader);
+        MemorizedTransaction transaction = Read(qifSource, this.serializer.ReadMemorizedTransaction);
         Assert.Equal(new DateTime(2008, 1, 1), transaction.Date);
         Assert.Equal(1500, transaction.Amount);
         Assert.Equal("123", transaction.Number);
@@ -124,8 +167,7 @@ PPaycheck
 LIncome.Salary
 ^
 ";
-        using QifReader reader = new(new StringReader(qifSource));
-        MemorizedTransaction transaction = this.serializer.ReadMemorizedTransaction(reader);
+        MemorizedTransaction transaction = Read(qifSource, this.serializer.ReadMemorizedTransaction);
         Assert.Equal(new DateTime(2008, 1, 1), transaction.Date);
         Assert.Equal(1500, transaction.Amount);
         Assert.Equal("123", transaction.Number);
@@ -159,8 +201,7 @@ ESplit3Memo
 $500
 ^
 ";
-        using QifReader reader = new(new StringReader(qifSource));
-        MemorizedTransaction transaction = this.serializer.ReadMemorizedTransaction(reader);
+        MemorizedTransaction transaction = Read(qifSource, this.serializer.ReadMemorizedTransaction);
         Assert.Equal(1500, transaction.Amount);
         Assert.Equal("123", transaction.Number);
         Assert.Equal(ClearedState.Cleared, transaction.ClearedStatus);
@@ -188,8 +229,7 @@ T
 R460
 I
 ^";
-        using QifReader reader = new(new StringReader(qifSource));
-        Category category = this.serializer.ReadCategory(reader);
+        Category category = Read(qifSource, this.serializer.ReadCategory);
         Assert.Equal("Bonus", category.Name);
         Assert.Equal("Bonus Income", category.Description);
         Assert.True(category.TaxRelated);
@@ -205,8 +245,7 @@ I
 E
 B30.20
 ^";
-        using QifReader reader = new(new StringReader(qifSource));
-        Category category = this.serializer.ReadCategory(reader);
+        Category category = Read(qifSource, this.serializer.ReadCategory);
         Assert.Equal("Gardening", category.Name);
         Assert.Null(category.Description);
         Assert.False(category.TaxRelated);
@@ -225,8 +264,7 @@ U1,500.00
 T1,500.00
 LNetBank Checking
 ^";
-        using QifReader reader = new(new StringReader(qifSource));
-        InvestmentTransaction transaction = this.serializer.ReadInvestmentTransaction(reader);
+        InvestmentTransaction transaction = Read(qifSource, this.serializer.ReadInvestmentTransaction);
         Assert.Equal(new DateTime(2006, 10, 27), transaction.Date);
         Assert.Equal("Cash", transaction.Action);
         Assert.Equal(ClearedState.Reconciled, transaction.ClearedStatus);
@@ -251,8 +289,7 @@ YFidelity International Real Estate
 MCASH CONTRIBUTION PRIOR YEAR
 LNetBank Checking
 ^";
-        using QifReader reader = new(new StringReader(qifSource));
-        InvestmentTransaction transaction = this.serializer.ReadInvestmentTransaction(reader);
+        InvestmentTransaction transaction = Read(qifSource, this.serializer.ReadInvestmentTransaction);
         Assert.Equal(new DateTime(2006, 10, 27), transaction.Date);
         Assert.Equal("Cash", transaction.Action);
         Assert.Equal(ClearedState.Reconciled, transaction.ClearedStatus);
@@ -278,8 +315,7 @@ U1,500.00
 T1,500.00
 LNetBank Checking
 ^";
-        using QifReader reader = new(new StringReader(qifSource));
-        InvestmentTransaction transaction = this.serializer.ReadInvestmentTransaction(reader);
+        InvestmentTransaction transaction = Read(qifSource, this.serializer.ReadInvestmentTransaction);
         Assert.Equal(new DateTime(2006, 10, 27), transaction.Date);
         Assert.Equal(1500, transaction.TransactionAmount);
     }
@@ -291,8 +327,7 @@ LNetBank Checking
 TSome Type
 ^
 ";
-        using QifReader reader = new(new StringReader(qifSource));
-        Account account = this.serializer.ReadAccount(reader);
+        Account account = Read(qifSource, this.serializer.ReadAccount);
         Assert.Equal("My name", account.Name);
         Assert.Equal("Some Type", account.Type);
     }
@@ -308,8 +343,7 @@ L1500
 $1800
 ^
 ";
-        using QifReader reader = new(new StringReader(qifSource));
-        Account account = this.serializer.ReadAccount(reader);
+        Account account = Read(qifSource, this.serializer.ReadAccount);
         Assert.Equal("My name", account.Name);
         Assert.Equal("My description", account.Description);
         Assert.Equal("Some Type", account.Type);
@@ -323,8 +357,7 @@ $1800
     {
         const string qifSource = @"NBonus
 ^";
-        using QifReader reader = new(new StringReader(qifSource));
-        Class clazz = this.serializer.ReadClass(reader);
+        Class clazz = Read(qifSource, this.serializer.ReadClass);
         Assert.Equal("Bonus", clazz.Name);
         Assert.Null(clazz.Description);
     }
@@ -335,8 +368,7 @@ $1800
         const string qifSource = @"NBonus
 DA bonus
 ^";
-        using QifReader reader = new(new StringReader(qifSource));
-        Class clazz = this.serializer.ReadClass(reader);
+        Class clazz = Read(qifSource, this.serializer.ReadClass);
         Assert.Equal("Bonus", clazz.Name);
         Assert.Equal("A bonus", clazz.Description);
     }
@@ -360,17 +392,36 @@ DA bonus
     }
 
     [Fact]
-    public void Write_Account_Minimal()
+    public void Write_Account()
     {
         this.AssertSerialized(
             new Account("Account1"),
             "NAccount1\n^\n",
             this.serializer.Write);
+        this.AssertSerialized(
+            new Account("Account1") { Description = "desc", Type = "Z", CreditLimit = 5, StatementBalance = 6, StatementBalanceDate = new DateTime(2020, 2, 3) },
+            "NAccount1\nTZ\nDdesc\nL5\n/02/03/2020\n$6\n^\n",
+            this.serializer.Write);
+        this.AssertSerialized(
+            new Account("Account1") { Description = "desc", Type = "Z", CreditLimit = 5, StatementBalance = 6, StatementBalanceDate = new DateTime(2020, 2, 3) },
+            "NAccount1\nTZ\nDdesc\nL5\n/03/02/2020\n$6\n^\n",
+            this.serializer.Write,
+            "en-GB");
     }
 
-    private void AssertSerialized<T>(T record, string expected, Action<QifWriter, T> recordWriter)
+    private static T Read<T>(string qifSource, Func<QifReader, T> readMethod, string? culture = null)
+    {
+        using QifReader reader = new(new StringReader(qifSource))
+        {
+            FormatProvider = culture is null ? CultureInfo.InvariantCulture : new CultureInfo(culture),
+        };
+        return readMethod(reader);
+    }
+
+    private void AssertSerialized<T>(T record, string expected, Action<QifWriter, T> recordWriter, string? culture = null)
     {
         this.stringWriter.GetStringBuilder().Clear();
+        this.qifWriter.FormatProvider = culture is null ? CultureInfo.InvariantCulture : new CultureInfo(culture);
         recordWriter(this.qifWriter, record);
         Assert.Equal(expected, this.stringWriter.ToString());
     }
