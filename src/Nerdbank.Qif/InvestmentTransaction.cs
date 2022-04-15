@@ -24,17 +24,17 @@ public record InvestmentTransaction(DateTime Date)
     /// <summary>
     /// Gets the price.
     /// </summary>
-    public decimal Price { get; init; }
+    public decimal? Price { get; init; }
 
     /// <summary>
     /// Gets the quantity.
     /// </summary>
-    public decimal Quantity { get; init; }
+    public decimal? Quantity { get; init; }
 
     /// <summary>
     /// Gets the transaction amount.
     /// </summary>
-    public decimal TransactionAmount { get; init; }
+    public decimal? TransactionAmount { get; init; }
 
     /// <summary>
     /// Gets the cleared status.
@@ -54,7 +54,7 @@ public record InvestmentTransaction(DateTime Date)
     /// <summary>
     /// Gets the commission.
     /// </summary>
-    public decimal Commission { get; init; }
+    public decimal? Commission { get; init; }
 
     /// <summary>
     /// Gets the account for transfer.
@@ -64,7 +64,7 @@ public record InvestmentTransaction(DateTime Date)
     /// <summary>
     /// Gets the amount transferred, if cash is moved between accounts.
     /// </summary>
-    public decimal AmountTransferred { get; init; }
+    public decimal? AmountTransferred { get; init; }
 
     /// <summary>
     /// The names of each field that may appear in this record.

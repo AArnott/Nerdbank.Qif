@@ -1,10 +1,12 @@
 ﻿// Copyright (c) Andrew Arnott. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Immutable;
 using System.Globalization;
 
 public class QifSerializerTests : TestBase
 {
+    private static readonly DateTime Date = new(2013, 2, 3);
     private readonly QifSerializer serializer = new QifSerializer();
     private readonly StringWriter stringWriter = new() { NewLine = "\n" };
     private readonly QifWriter qifWriter;
@@ -18,7 +20,7 @@ public class QifSerializerTests : TestBase
     [Fact]
     public void ReadBankTransaction_Simple()
     {
-        const string qifSource = @"D1/2/2008
+        const string qifSource = @"D2/3/2013
 T1500
 N123
 PPaycheck
@@ -26,7 +28,7 @@ LIncome.Salary
 ^
 ";
         BankTransaction transaction = Read(qifSource, this.serializer.ReadBankTransaction);
-        Assert.Equal(new DateTime(2008, 1, 2), transaction.Date);
+        Assert.Equal(Date, transaction.Date);
         Assert.Equal(1500, transaction.Amount);
         Assert.Equal("123", transaction.Number);
         Assert.Equal("Paycheck", transaction.Payee);
@@ -36,7 +38,7 @@ LIncome.Salary
     [Fact]
     public void ReadBankTransaction_Uk()
     {
-        const string qifSource = @"D2/1/2008
+        const string qifSource = @"D2/3/2013
 T1500
 N123
 PPaycheck
@@ -44,7 +46,7 @@ LIncome.Salary
 ^
 ";
         BankTransaction transaction = Read(qifSource, this.serializer.ReadBankTransaction, "en-GB");
-        Assert.Equal(new DateTime(2008, 1, 2), transaction.Date);
+        Assert.Equal(new DateTime(2013, 3, 2), transaction.Date);
         Assert.Equal(1500, transaction.Amount);
         Assert.Equal("123", transaction.Number);
         Assert.Equal("Paycheck", transaction.Payee);
@@ -139,7 +141,7 @@ LRent
     [Fact]
     public void ReadMemorizedTransaction_Simple_TypeAtBottom()
     {
-        const string qifSource = @"D1/1/2008
+        const string qifSource = @"D2/3/2013
 T1500
 N123
 PPaycheck
@@ -148,7 +150,7 @@ KE
 ^
 ";
         MemorizedTransaction transaction = Read(qifSource, this.serializer.ReadMemorizedTransaction);
-        Assert.Equal(new DateTime(2008, 1, 1), transaction.Date);
+        Assert.Equal(Date, transaction.Date);
         Assert.Equal(1500, transaction.Amount);
         Assert.Equal("123", transaction.Number);
         Assert.Equal("Paycheck", transaction.Payee);
@@ -159,7 +161,7 @@ KE
     [Fact]
     public void ReadMemorizedTransaction_Simple_TypeAtTop()
     {
-        const string qifSource = @"D1/1/2008
+        const string qifSource = @"D2/3/2013
 KE
 T1500
 N123
@@ -168,7 +170,7 @@ LIncome.Salary
 ^
 ";
         MemorizedTransaction transaction = Read(qifSource, this.serializer.ReadMemorizedTransaction);
-        Assert.Equal(new DateTime(2008, 1, 1), transaction.Date);
+        Assert.Equal(Date, transaction.Date);
         Assert.Equal(1500, transaction.Amount);
         Assert.Equal("123", transaction.Number);
         Assert.Equal("Paycheck", transaction.Payee);
@@ -275,7 +277,7 @@ LNetBank Checking
     [Fact]
     public void ReadInvestmentTransaction_Exhaustive()
     {
-        const string qifSource = @"D10/27' 6
+        const string qifSource = @"D2/3/2013
 NCash
 CR
 U1,500.00
@@ -290,7 +292,7 @@ MCASH CONTRIBUTION PRIOR YEAR
 LNetBank Checking
 ^";
         InvestmentTransaction transaction = Read(qifSource, this.serializer.ReadInvestmentTransaction);
-        Assert.Equal(new DateTime(2006, 10, 27), transaction.Date);
+        Assert.Equal(Date, transaction.Date);
         Assert.Equal("Cash", transaction.Action);
         Assert.Equal(ClearedState.Reconciled, transaction.ClearedStatus);
         Assert.Equal(1500, transaction.TransactionAmount);
@@ -307,7 +309,7 @@ LNetBank Checking
     [Fact]
     public void ReadInvestmentTransaction_UnknownFields()
     {
-        const string qifSource = @"D10/27' 6
+        const string qifSource = @"D2/3/2013
 NCash
 CR
 ZNotta # unrecognized field that should be skipped over
@@ -316,7 +318,7 @@ T1,500.00
 LNetBank Checking
 ^";
         InvestmentTransaction transaction = Read(qifSource, this.serializer.ReadInvestmentTransaction);
-        Assert.Equal(new DateTime(2006, 10, 27), transaction.Date);
+        Assert.Equal(Date, transaction.Date);
         Assert.Equal(1500, transaction.TransactionAmount);
     }
 
@@ -339,7 +341,7 @@ TSome Type
 TSome Type
 DMy description
 L1500
-/03/01/2021
+/02/03/2013
 $1800
 ^
 ";
@@ -348,7 +350,7 @@ $1800
         Assert.Equal("My description", account.Description);
         Assert.Equal("Some Type", account.Type);
         Assert.Equal(1500, account.CreditLimit);
-        Assert.Equal(new DateTime(2021, 3, 1), account.StatementBalanceDate);
+        Assert.Equal(Date, account.StatementBalanceDate);
         Assert.Equal(1800, account.StatementBalance);
     }
 
@@ -399,14 +401,62 @@ DA bonus
             "NAccount1\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new Account("Account1") { Description = "desc", Type = "Z", CreditLimit = 5, StatementBalance = 6, StatementBalanceDate = new DateTime(2020, 2, 3) },
-            "NAccount1\nTZ\nDdesc\nL5\n/02/03/2020\n$6\n^\n",
+            new Account("Account1") { Description = "desc", Type = "Z", CreditLimit = 5, StatementBalance = 6, StatementBalanceDate = Date },
+            "NAccount1\nTZ\nDdesc\nL5\n/02/03/2013\n$6\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new Account("Account1") { Description = "desc", Type = "Z", CreditLimit = 5, StatementBalance = 6, StatementBalanceDate = new DateTime(2020, 2, 3) },
-            "NAccount1\nTZ\nDdesc\nL5\n/03/02/2020\n$6\n^\n",
+            new Account("Account1") { Description = "desc", Type = "Z", CreditLimit = 5, StatementBalance = 6, StatementBalanceDate = Date },
+            "NAccount1\nTZ\nDdesc\nL5\n/03/02/2013\n$6\n^\n",
             this.serializer.Write,
             "en-GB");
+    }
+
+    [Fact]
+    public void Write_BankTransaction()
+    {
+        this.AssertSerialized(
+            new BankTransaction(Date, 35),
+            "D02/03/2013\nT35\n^\n",
+            this.serializer.Write);
+        this.AssertSerialized(
+            new BankTransaction(Date, 35) { Address = ImmutableList.Create("addr", "city"), Category = "cat", ClearedStatus = ClearedState.Cleared, Memo = "memo", Number = "123", Payee = "payee" },
+            "D02/03/2013\nT35\nN123\nMmemo\nLcat\nCC\nPpayee\nAaddr\nAcity\n^\n",
+            this.serializer.Write);
+        this.AssertSerialized(
+            new BankTransaction(Date, 35) { Splits = ImmutableList.Create<BankSplit>(new("cat1", "memo1") { Amount = 10 }, new("cat2", "memo2") { Percentage = 15 }) },
+            "D02/03/2013\nT35\nScat1\nEmemo1\n$10\nScat2\nEmemo2\n%15\n^\n",
+            this.serializer.Write);
+    }
+
+    [Fact]
+    public void Write_MemorizedTransaction()
+    {
+        // TODO: add memorization-specific fields
+        this.AssertSerialized(
+            new MemorizedTransaction(MemorizedTransactionType.Check, Date, 35),
+            "KC\nD02/03/2013\nT35\n^\n",
+            this.serializer.Write);
+        this.AssertSerialized(
+            new MemorizedTransaction(MemorizedTransactionType.Deposit, Date, 35) { Address = ImmutableList.Create("addr", "city"), Category = "cat", ClearedStatus = ClearedState.Cleared, Memo = "memo", Number = "123", Payee = "payee", AmortizationCurrentLoanBalance = 14 },
+            "KD\nD02/03/2013\nT35\nN123\nMmemo\nLcat\nCC\nPpayee\nAaddr\nAcity\n^\n",
+            this.serializer.Write);
+        this.AssertSerialized(
+            new MemorizedTransaction(MemorizedTransactionType.Payment, Date, 35) { Splits = ImmutableList.Create<BankSplit>(new("cat1", "memo1") { Amount = 10 }, new("cat2", "memo2") { Percentage = 15 }) },
+            "KP\nD02/03/2013\nT35\nScat1\nEmemo1\n$10\nScat2\nEmemo2\n%15\n^\n",
+            this.serializer.Write);
+    }
+
+    [Fact]
+    public void Write_InvestmentTransaction()
+    {
+        this.AssertSerialized(
+            new InvestmentTransaction(Date),
+            "D02/03/2013\n^\n",
+            this.serializer.Write);
+        this.AssertSerialized(
+            new InvestmentTransaction(Date) { Commission = 10, ClearedStatus = ClearedState.Reconciled, AmountTransferred = 4, Action = "BUY", Memo = "memo", Security = "sec", Quantity = 3, Price = 11, Payee = "payee", AccountForTransfer = "ta", TransactionAmount = 22 },
+            "D02/03/2013\nNBUY\nPpayee\nMmemo\nCR\nQ3\nYsec\nT22\nI11\nO10\n$4\nLta\n^\n",
+            this.serializer.Write);
     }
 
     private static T Read<T>(string qifSource, Func<QifReader, T> readMethod, string? culture = null)

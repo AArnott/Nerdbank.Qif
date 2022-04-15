@@ -199,7 +199,8 @@ public class QifSerializer
     /// <inheritdoc cref="Write(QifWriter, Class)" />
     public virtual void Write(QifWriter writer, BankTransaction value)
     {
-        throw new NotImplementedException();
+        WriteBankTransactionHelper(writer, value);
+        writer.WriteEndOfRecord();
     }
 
     /// <summary>
@@ -318,7 +319,18 @@ public class QifSerializer
     /// <inheritdoc cref="Write(QifWriter, Class)" />
     public virtual void Write(QifWriter writer, MemorizedTransaction value)
     {
-        throw new NotImplementedException();
+        char typeCode = value.Type switch
+        {
+            MemorizedTransactionType.ElectronicPayee => MemorizedTransaction.TransactionTypeCodes.ElectronicPayee,
+            MemorizedTransactionType.Deposit => MemorizedTransaction.TransactionTypeCodes.Deposit,
+            MemorizedTransactionType.Payment => MemorizedTransaction.TransactionTypeCodes.Payment,
+            MemorizedTransactionType.Investment => MemorizedTransaction.TransactionTypeCodes.Investment,
+            MemorizedTransactionType.Check => MemorizedTransaction.TransactionTypeCodes.Check,
+            _ => throw new InvalidTransactionException("Unsupported type."),
+        };
+        writer.WriteField(MemorizedTransaction.FieldNames.Type, typeCode);
+        WriteBankTransactionHelper(writer, value);
+        writer.WriteEndOfRecord();
     }
 
     /// <summary>
@@ -528,7 +540,19 @@ public class QifSerializer
     /// <inheritdoc cref="Write(QifWriter, Class)" />
     public virtual void Write(QifWriter writer, InvestmentTransaction value)
     {
-        throw new NotImplementedException();
+        writer.WriteField(InvestmentTransaction.FieldNames.Date, value.Date);
+        writer.WriteField(InvestmentTransaction.FieldNames.Action, value.Action);
+        writer.WriteField(InvestmentTransaction.FieldNames.Payee, value.Payee);
+        writer.WriteField(InvestmentTransaction.FieldNames.Memo, value.Memo);
+        writer.WriteField(InvestmentTransaction.FieldNames.ClearedStatus, value.ClearedStatus);
+        writer.WriteField(InvestmentTransaction.FieldNames.Quantity, value.Quantity);
+        writer.WriteField(InvestmentTransaction.FieldNames.Security, value.Security);
+        writer.WriteField(InvestmentTransaction.FieldNames.TransactionAmount, value.TransactionAmount);
+        writer.WriteField(InvestmentTransaction.FieldNames.Price, value.Price);
+        writer.WriteField(InvestmentTransaction.FieldNames.Commission, value.Commission);
+        writer.WriteField(InvestmentTransaction.FieldNames.AmountTransferred, value.AmountTransferred);
+        writer.WriteField(InvestmentTransaction.FieldNames.AccountForTransfer, value.AccountForTransfer);
+        writer.WriteEndOfRecord();
     }
 
     /// <summary>
@@ -684,5 +708,28 @@ public class QifSerializer
             StatementBalanceDate = statementBalanceDate,
             StatementBalance = statementBalance,
         };
+    }
+
+    private static void WriteBankTransactionHelper(QifWriter writer, BankTransaction value)
+    {
+        writer.WriteField(BankTransaction.FieldNames.Date, value.Date);
+        writer.WriteField(BankTransaction.FieldNames.Amount, value.Amount);
+        writer.WriteField(BankTransaction.FieldNames.Number, value.Number);
+        writer.WriteField(BankTransaction.FieldNames.Memo, value.Memo);
+        writer.WriteField(BankTransaction.FieldNames.Category, value.Category);
+        writer.WriteField(BankTransaction.FieldNames.ClearedStatus, value.ClearedStatus);
+        writer.WriteField(BankTransaction.FieldNames.Payee, value.Payee);
+        foreach (string address in value.Address)
+        {
+            writer.WriteField(BankTransaction.FieldNames.Address, address);
+        }
+
+        foreach (BankSplit split in value.Splits)
+        {
+            writer.WriteField(BankTransaction.FieldNames.SplitCategory, split.Category);
+            writer.WriteField(BankTransaction.FieldNames.SplitMemo, split.Memo);
+            writer.WriteField(BankTransaction.FieldNames.SplitAmount, split.Amount);
+            writer.WriteField(BankTransaction.FieldNames.SplitPercent, split.Percentage);
+        }
     }
 }

@@ -142,6 +142,14 @@ public class QifWriter
     }
 
     /// <inheritdoc cref="WriteField(string, string?)"/>
+    public virtual void WriteField(string name, char value)
+    {
+        Span<char> buffer = stackalloc char[1];
+        buffer[0] = value;
+        this.WriteField(name, buffer);
+    }
+
+    /// <inheritdoc cref="WriteField(string, string?)"/>
     public virtual void WriteField(string name, decimal? value)
     {
         if (value is null)
