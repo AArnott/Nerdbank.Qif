@@ -330,6 +330,13 @@ public class QifSerializer
         };
         writer.WriteField(MemorizedTransaction.FieldNames.Type, typeCode);
         WriteBankTransactionHelper(writer, value);
+        writer.WriteField(MemorizedTransaction.FieldNames.AmortizationFirstPaymentDate, value.AmortizationFirstPaymentDate);
+        writer.WriteField(MemorizedTransaction.FieldNames.AmortizationTotalYearsForLoan, value.AmortizationTotalYearsForLoan);
+        writer.WriteField(MemorizedTransaction.FieldNames.AmortizationNumberOfPaymentsAlreadyMade, value.AmortizationNumberOfPaymentsAlreadyMade);
+        writer.WriteField(MemorizedTransaction.FieldNames.AmortizationNumberOfPeriodsPerYear, value.AmortizationNumberOfPeriodsPerYear);
+        writer.WriteField(MemorizedTransaction.FieldNames.AmortizationInterestRate, value.AmortizationInterestRate);
+        writer.WriteField(MemorizedTransaction.FieldNames.AmortizationCurrentLoanBalance, value.AmortizationCurrentLoanBalance);
+        writer.WriteField(MemorizedTransaction.FieldNames.AmortizationOriginalLoanAmount, value.AmortizationOriginalLoanAmount);
         writer.WriteEndOfRecord();
     }
 
@@ -356,6 +363,14 @@ public class QifSerializer
         ImmutableList<string> splitMemos = ImmutableList<string>.Empty;
         ImmutableList<decimal> splitAmounts = ImmutableList<decimal>.Empty;
         ImmutableList<decimal> splitPercentage = ImmutableList<decimal>.Empty;
+        DateTime? amortizationFirstPaymentDate = null;
+        int? amortizationTotalYearsForLoan = null;
+        int? amortizationNumberOfPaymentsAlreadyMade = null;
+        int? amortizationNumberOfPeriodsPerYear = null;
+        decimal? amortizationInterestRate = null;
+        decimal? amortizationCurrentLoanBalance = null;
+        decimal? amortizationOriginalLoanAmount = null;
+
         while (reader.TryReadField(out ReadOnlyMemory<char> fieldName, out _))
         {
             if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Date, fieldName))
@@ -423,6 +438,34 @@ public class QifSerializer
                     _ => throw new InvalidTransactionException("Unsupported memorized transaction type."),
                 };
             }
+            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationInterestRate, fieldName))
+            {
+                amortizationInterestRate = reader.ReadFieldAsDecimal();
+            }
+            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationCurrentLoanBalance, fieldName))
+            {
+                amortizationCurrentLoanBalance = reader.ReadFieldAsDecimal();
+            }
+            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationFirstPaymentDate, fieldName))
+            {
+                amortizationFirstPaymentDate = reader.ReadFieldAsDate();
+            }
+            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationNumberOfPaymentsAlreadyMade, fieldName))
+            {
+                amortizationNumberOfPaymentsAlreadyMade = (int)reader.ReadFieldAsInt64();
+            }
+            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationNumberOfPeriodsPerYear, fieldName))
+            {
+                amortizationNumberOfPeriodsPerYear = (int)reader.ReadFieldAsInt64();
+            }
+            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationTotalYearsForLoan, fieldName))
+            {
+                amortizationTotalYearsForLoan = (int)reader.ReadFieldAsInt64();
+            }
+            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationOriginalLoanAmount, fieldName))
+            {
+                amortizationOriginalLoanAmount = (int)reader.ReadFieldAsInt64();
+            }
         }
 
         if (splitCategories.Count != splitMemos.Count ||
@@ -462,6 +505,13 @@ public class QifSerializer
             Category = category,
             Address = address,
             Splits = splits,
+            AmortizationFirstPaymentDate = amortizationFirstPaymentDate,
+            AmortizationTotalYearsForLoan = amortizationTotalYearsForLoan,
+            AmortizationNumberOfPaymentsAlreadyMade = amortizationNumberOfPaymentsAlreadyMade,
+            AmortizationNumberOfPeriodsPerYear = amortizationNumberOfPeriodsPerYear,
+            AmortizationInterestRate = amortizationInterestRate,
+            AmortizationCurrentLoanBalance = amortizationCurrentLoanBalance,
+            AmortizationOriginalLoanAmount = amortizationOriginalLoanAmount,
         };
     }
 

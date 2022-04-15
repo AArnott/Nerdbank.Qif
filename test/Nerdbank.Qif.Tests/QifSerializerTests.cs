@@ -7,6 +7,7 @@ using System.Globalization;
 public class QifSerializerTests : TestBase
 {
     private static readonly DateTime Date = new(2013, 2, 3);
+    private static readonly DateTime Date2 = new(2013, 2, 4);
     private readonly QifSerializer serializer = new QifSerializer();
     private readonly StringWriter stringWriter = new() { NewLine = "\n" };
     private readonly QifWriter qifWriter;
@@ -201,6 +202,13 @@ $600
 SSplit3Cat
 ESplit3Memo
 $500
+102/04/2013
+230
+313
+46
+50.12
+614
+710000
 ^
 ";
         MemorizedTransaction transaction = Read(qifSource, this.serializer.ReadMemorizedTransaction);
@@ -220,6 +228,13 @@ $500
             },
             transaction.Splits);
         Assert.Equal(MemorizedTransactionType.Payment, transaction.Type);
+        Assert.Equal(14, transaction.AmortizationCurrentLoanBalance);
+        Assert.Equal(Date2, transaction.AmortizationFirstPaymentDate);
+        Assert.Equal(.12m, transaction.AmortizationInterestRate);
+        Assert.Equal(13, transaction.AmortizationNumberOfPaymentsAlreadyMade);
+        Assert.Equal(6, transaction.AmortizationNumberOfPeriodsPerYear);
+        Assert.Equal(10000, transaction.AmortizationOriginalLoanAmount);
+        Assert.Equal(30, transaction.AmortizationTotalYearsForLoan);
     }
 
     [Fact]
@@ -431,14 +446,13 @@ DA bonus
     [Fact]
     public void Write_MemorizedTransaction()
     {
-        // TODO: add memorization-specific fields
         this.AssertSerialized(
             new MemorizedTransaction(MemorizedTransactionType.Check, Date, 35),
             "KC\nD02/03/2013\nT35\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new MemorizedTransaction(MemorizedTransactionType.Deposit, Date, 35) { Address = ImmutableList.Create("addr", "city"), Category = "cat", ClearedStatus = ClearedState.Cleared, Memo = "memo", Number = "123", Payee = "payee", AmortizationCurrentLoanBalance = 14 },
-            "KD\nD02/03/2013\nT35\nN123\nMmemo\nLcat\nCC\nPpayee\nAaddr\nAcity\n^\n",
+            new MemorizedTransaction(MemorizedTransactionType.Deposit, Date, 35) { Address = ImmutableList.Create("addr", "city"), Category = "cat", ClearedStatus = ClearedState.Cleared, Memo = "memo", Number = "123", Payee = "payee", AmortizationCurrentLoanBalance = 14, AmortizationFirstPaymentDate = Date2, AmortizationInterestRate = .12m, AmortizationNumberOfPaymentsAlreadyMade = 13, AmortizationNumberOfPeriodsPerYear = 6, AmortizationOriginalLoanAmount = 10000, AmortizationTotalYearsForLoan = 30 },
+            "KD\nD02/03/2013\nT35\nN123\nMmemo\nLcat\nCC\nPpayee\nAaddr\nAcity\n102/04/2013\n230\n313\n46\n50.12\n614\n710000\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
             new MemorizedTransaction(MemorizedTransactionType.Payment, Date, 35) { Splits = ImmutableList.Create<BankSplit>(new("cat1", "memo1") { Amount = 10 }, new("cat2", "memo2") { Percentage = 15 }) },

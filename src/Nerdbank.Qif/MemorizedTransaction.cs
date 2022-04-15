@@ -31,12 +31,12 @@ public record MemorizedTransaction(MemorizedTransactionType Type, DateTime Date,
     /// <summary>
     /// Gets or sets the amortization number of payments already made.
     /// </summary>
-    public decimal? AmortizationNumberOfPaymentsAlreadyMade { get; set; }
+    public int? AmortizationNumberOfPaymentsAlreadyMade { get; set; }
 
     /// <summary>
     /// Gets or sets the amortization number of periods per year.
     /// </summary>
-    public decimal? AmortizationNumberOfPeriodsPerYear { get; set; }
+    public int? AmortizationNumberOfPeriodsPerYear { get; set; }
 
     /// <summary>
     /// Gets or sets the amortization original loan amount.
@@ -46,7 +46,7 @@ public record MemorizedTransaction(MemorizedTransactionType Type, DateTime Date,
     /// <summary>
     /// Gets or sets the amortization total years for loan.
     /// </summary>
-    public decimal? AmortizationTotalYearsForLoan { get; set; }
+    public int? AmortizationTotalYearsForLoan { get; set; }
 
     /// <summary>
     /// The names of each field that may appear in this record.
@@ -54,6 +54,13 @@ public record MemorizedTransaction(MemorizedTransactionType Type, DateTime Date,
     internal new class FieldNames : BankTransaction.FieldNames
     {
         internal const string Type = "K";
+        internal const string AmortizationFirstPaymentDate = "1";
+        internal const string AmortizationTotalYearsForLoan = "2";
+        internal const string AmortizationNumberOfPaymentsAlreadyMade = "3";
+        internal const string AmortizationNumberOfPeriodsPerYear = "4";
+        internal const string AmortizationInterestRate = "5";
+        internal const string AmortizationCurrentLoanBalance = "6";
+        internal const string AmortizationOriginalLoanAmount = "7";
     }
 
     internal static class TransactionTypeCodes
