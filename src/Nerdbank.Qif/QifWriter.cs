@@ -15,7 +15,7 @@ public class QifWriter
     /// <summary>
     /// Initializes a new instance of the <see cref="QifWriter"/> class.
     /// </summary>
-    /// <param name="writer">The text writer to emit to.</param>
+    /// <param name="writer">The text writer to emit to. This value will <em>not</em> be disposed of when writing is done.</param>
     public QifWriter(TextWriter writer)
     {
         this.writer = writer ?? throw new ArgumentNullException(nameof(writer));

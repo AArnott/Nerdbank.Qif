@@ -36,60 +36,7 @@ public record Account(string Name)
     /// </summary>
     public decimal? StatementBalance { get; set; }
 
-    /// <summary>
-    /// Deserializes a <see cref="Account"/> from the given <see cref="QifReader"/>.
-    /// </summary>
-    /// <param name="reader">The reader to deserialize from.</param>
-    /// <returns>The deserialized record.</returns>
-    public static Account Load(QifReader reader)
-    {
-        string? name = null;
-        string? type = null;
-        string? description = null;
-        decimal? creditLimit = null;
-        DateTime? statementBalanceDate = null;
-        decimal? statementBalance = null;
-        while (reader.TryReadField(out ReadOnlyMemory<char> fieldName, out _))
-        {
-            if (QifUtilities.Equals(FieldNames.Name, fieldName))
-            {
-                name = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(FieldNames.Type, fieldName))
-            {
-                type = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(FieldNames.Description, fieldName))
-            {
-                description = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(FieldNames.CreditLimit, fieldName))
-            {
-                creditLimit = reader.ReadFieldAsDecimal();
-            }
-            else if (QifUtilities.Equals(FieldNames.StatementBalanceDate, fieldName))
-            {
-                statementBalanceDate = reader.ReadFieldAsDate();
-            }
-            else if (QifUtilities.Equals(FieldNames.StatementBalance, fieldName))
-            {
-                statementBalance = reader.ReadFieldAsDecimal();
-            }
-        }
-
-        reader.ReadEndOfRecord();
-
-        return new(ValueOrThrow(name, FieldNames.Name))
-        {
-            Type = type,
-            Description = description,
-            CreditLimit = creditLimit,
-            StatementBalanceDate = statementBalanceDate,
-            StatementBalance = statementBalance,
-        };
-    }
-
-    private static class FieldNames
+    internal static class FieldNames
     {
         internal const string Name = "N";
         internal const string Type = "T";

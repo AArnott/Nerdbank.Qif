@@ -42,68 +42,9 @@ public record Category(string Name)
     public string? TaxSchedule { get; init; }
 
     /// <summary>
-    /// Deserializes a <see cref="BankTransaction"/> from the given <see cref="QifReader"/>.
-    /// </summary>
-    /// <param name="reader">The reader to deserialize from.</param>
-    /// <returns>The deserialized record.</returns>
-    public static Category Load(QifReader reader)
-    {
-        string? name = null;
-        string? description = null;
-        bool taxRelated = false;
-        bool incomeCategory = false;
-        bool expenseCategory = false;
-        string? taxSchedule = null;
-        decimal budgetAmount = 0;
-        while (reader.TryReadField(out ReadOnlyMemory<char> fieldName, out _))
-        {
-            if (QifUtilities.Equals(FieldNames.Name, fieldName))
-            {
-                name = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(FieldNames.Description, fieldName))
-            {
-                description = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(FieldNames.TaxSchedule, fieldName))
-            {
-                taxSchedule = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(FieldNames.TaxRelated, fieldName))
-            {
-                taxRelated = true;
-            }
-            else if (QifUtilities.Equals(FieldNames.IncomeCategory, fieldName))
-            {
-                incomeCategory = true;
-            }
-            else if (QifUtilities.Equals(FieldNames.ExpenseCategory, fieldName))
-            {
-                expenseCategory = true;
-            }
-            else if (QifUtilities.Equals(FieldNames.BudgetAmount, fieldName))
-            {
-                budgetAmount = reader.ReadFieldAsDecimal();
-            }
-        }
-
-        reader.ReadEndOfRecord();
-
-        return new(ValueOrThrow(name, FieldNames.Name))
-        {
-            Description = description,
-            TaxRelated = taxRelated,
-            IncomeCategory = incomeCategory,
-            ExpenseCategory = expenseCategory,
-            TaxSchedule = taxSchedule,
-            BudgetAmount = budgetAmount,
-        };
-    }
-
-    /// <summary>
     /// The names of each field that may appear in this record.
     /// </summary>
-    private static class FieldNames
+    internal static class FieldNames
     {
         internal const string Name = "N";
         internal const string Description = "D";
