@@ -37,17 +37,17 @@ public class QifReader : IDisposable
     public IFormatProvider FormatProvider { get; set; } = CultureInfo.CurrentCulture;
 
     /// <inheritdoc cref="QifParser.Kind"/>
-    public QifParser.TokenKind Kind => this.parser.Kind;
+    public QifToken Kind => this.parser.Kind;
 
     /// <summary>
     /// Gets the value of the header at the current reader position.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifParser.TokenKind.Header"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifToken.Header"/>.</exception>
     public (ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) Header
     {
         get
         {
-            this.ThrowIfNotAt(QifParser.TokenKind.Header);
+            this.ThrowIfNotAt(QifToken.Header);
             return this.parser.CurrentHeader;
         }
     }
@@ -55,12 +55,12 @@ public class QifReader : IDisposable
     /// <summary>
     /// Gets the value of the field at the current reader position.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifParser.TokenKind.Field"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifToken.Field"/>.</exception>
     public (ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) Field
     {
         get
         {
-            this.ThrowIfNotAt(QifParser.TokenKind.Field);
+            this.ThrowIfNotAt(QifToken.Field);
             return this.parser.Field;
         }
     }
@@ -69,14 +69,14 @@ public class QifReader : IDisposable
     /// Parses the field value as a <see cref="string"/>.
     /// </summary>
     /// <returns>The parsed value.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifParser.TokenKind.Field"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifToken.Field"/>.</exception>
     public string ReadFieldAsString() => this.Field.Value.ToString();
 
     /// <summary>
     /// Parses the field value as a <see cref="DateTime"/>.
     /// </summary>
     /// <returns>The parsed value.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifParser.TokenKind.Field"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifToken.Field"/>.</exception>
     public virtual DateTime ReadFieldAsDate()
     {
         if (this.Field.Value.Span.Length > 50)
@@ -107,21 +107,21 @@ public class QifReader : IDisposable
     /// Parses the field value as a <see cref="long"/>.
     /// </summary>
     /// <returns>The parsed value.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifParser.TokenKind.Field"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifToken.Field"/>.</exception>
     public virtual long ReadFieldAsInt64() => long.Parse(this.Field.Value.Span, NumberStyles.Any, this.FormatProvider);
 
     /// <summary>
     /// Parses the field value as a <see cref="decimal"/>.
     /// </summary>
     /// <returns>The parsed value.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifParser.TokenKind.Field"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifToken.Field"/>.</exception>
     public virtual decimal ReadFieldAsDecimal() => decimal.Parse(this.Field.Value.Span, NumberStyles.Any, this.FormatProvider);
 
     /// <summary>
     /// Parses the field value as a <see cref="ClearedState"/>.
     /// </summary>
     /// <returns>The parsed value.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifParser.TokenKind.Field"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifToken.Field"/>.</exception>
     public virtual ClearedState ReadFieldAsClearedState()
     {
         return this.Field.Value.Length == 0 ? ClearedState.None : char.ToUpperInvariant(this.Field.Value.Span[0]) switch
@@ -142,13 +142,13 @@ public class QifReader : IDisposable
     /// </summary>
     /// <param name="kind">The kind of token to skip to.</param>
     /// <returns><see langword="true" /> if a token of the required kind was found; <see langword="false" /> if the end of file was reached first.</returns>
-    public bool MoveToNext(QifParser.TokenKind kind)
+    public bool MoveToNext(QifToken kind)
     {
         do
         {
             this.MoveNext();
         }
-        while (this.parser.Kind != kind && this.parser.Kind != QifParser.TokenKind.EOF);
+        while (this.parser.Kind != kind && this.parser.Kind != QifToken.EOF);
         return this.parser.Kind == kind;
     }
 
@@ -159,33 +159,33 @@ public class QifReader : IDisposable
     }
 
     /// <summary>
-    /// Reads beyond the current <see cref="QifParser.TokenKind.EndOfRecord"/> token.
+    /// Reads beyond the current <see cref="QifToken.EndOfRecord"/> token.
     /// </summary>
-    public void ReadEndOfRecord() => this.MovePast(QifParser.TokenKind.EndOfRecord);
+    public void ReadEndOfRecord() => this.MovePast(QifToken.EndOfRecord);
 
     /// <summary>
     /// Reads beyond the current token.
     /// </summary>
     /// <param name="kind">The type of token the caller believes is the current one.</param>
     /// <exception cref="InvalidOperationException">Thrown if the current token is not of type <paramref name="kind"/>.</exception>
-    public void MovePast(QifParser.TokenKind kind)
+    public void MovePast(QifToken kind)
     {
         this.ThrowIfNotAt(kind);
         this.MoveNext();
     }
 
     /// <summary>
-    /// Loops over the fields in the current set, skipping the current token if it is a <see cref="QifParser.TokenKind.Header"/>.
+    /// Loops over the fields in the current set, skipping the current token if it is a <see cref="QifToken.Header"/>.
     /// </summary>
     /// <returns>A sequence of fields.</returns>
     public IEnumerable<(ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value)> ReadTheseFields()
     {
-        if (this.Kind == QifParser.TokenKind.Header)
+        if (this.Kind == QifToken.Header)
         {
             this.MoveNext();
         }
 
-        while (this.Kind == QifParser.TokenKind.Field)
+        while (this.Kind == QifToken.Field)
         {
             yield return this.Field;
             this.MoveNext();
@@ -194,5 +194,5 @@ public class QifReader : IDisposable
         this.ReadEndOfRecord();
     }
 
-    private void ThrowIfNotAt(QifParser.TokenKind kind) => Verify.Operation(this.parser.Kind == kind, "Reader is not at a {0}.", kind);
+    private void ThrowIfNotAt(QifToken kind) => Verify.Operation(this.parser.Kind == kind, "Reader is not at a {0}.", kind);
 }

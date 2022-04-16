@@ -58,9 +58,9 @@ public class QifParserTests : TestBase
         ReadField("N", "Nuther Account");
         ReadField("T", "Oth A");
         ReadEndOfRecord();
-        ReadKind(QifParser.TokenKind.EOF);
+        ReadKind(QifToken.EOF);
 
-        void ReadKind(QifParser.TokenKind expectedKind)
+        void ReadKind(QifToken expectedKind)
         {
             Assert.Equal(expectedKind, parser.Read());
             Assert.Equal(expectedKind, parser.Kind);
@@ -68,7 +68,7 @@ public class QifParserTests : TestBase
 
         void ReadHeader(string expectedName, string expectedValue = "")
         {
-            ReadKind(QifParser.TokenKind.Header);
+            ReadKind(QifToken.Header);
             AssertEqual(expectedName, parser.CurrentHeader.Name);
             AssertEqual(expectedValue, parser.CurrentHeader.Value);
             Assert.Equal(0, parser.Field.Name.Length);
@@ -78,14 +78,14 @@ public class QifParserTests : TestBase
 
         void ReadField(string expectedHeader, string expectedValue)
         {
-            ReadKind(QifParser.TokenKind.Field);
+            ReadKind(QifToken.Field);
             AssertEqual(expectedHeader, parser.Field.Name);
             AssertEqual(expectedValue, parser.Field.Value);
         }
 
         void ReadEndOfRecord()
         {
-            ReadKind(QifParser.TokenKind.EndOfRecord);
+            ReadKind(QifToken.EndOfRecord);
             Assert.Equal(0, parser.Field.Name.Length);
         }
     }
@@ -94,7 +94,7 @@ public class QifParserTests : TestBase
     public void ReadTrimsHeaderValues()
     {
         using QifParser parser = new(new StringReader("!Type:Bank "));
-        Assert.Equal(QifParser.TokenKind.Header, parser.Read());
+        Assert.Equal(QifToken.Header, parser.Read());
         AssertEqual("Bank", parser.CurrentHeader.Value);
     }
 
@@ -102,12 +102,12 @@ public class QifParserTests : TestBase
     public void ReadTrimsFieldValues()
     {
         using QifParser parser = new(new StringReader("!Type:Bank\nD1/1/2021 \nT12.00 \nXXAb \n"));
-        Assert.Equal(QifParser.TokenKind.Header, parser.Read());
-        Assert.Equal(QifParser.TokenKind.Field, parser.Read());
+        Assert.Equal(QifToken.Header, parser.Read());
+        Assert.Equal(QifToken.Field, parser.Read());
         AssertEqual("1/1/2021", parser.Field.Value);
-        Assert.Equal(QifParser.TokenKind.Field, parser.Read());
+        Assert.Equal(QifToken.Field, parser.Read());
         AssertEqual("12.00", parser.Field.Value);
-        Assert.Equal(QifParser.TokenKind.Field, parser.Read());
+        Assert.Equal(QifToken.Field, parser.Read());
         AssertEqual("Ab", parser.Field.Value);
     }
 }

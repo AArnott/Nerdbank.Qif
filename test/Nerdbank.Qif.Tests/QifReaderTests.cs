@@ -11,7 +11,7 @@ public class QifReaderTests : TestBase
     public QifReaderTests(ITestOutputHelper logger)
             : base(logger)
     {
-        Assert.Equal(QifParser.TokenKind.BOF, this.reader.Kind);
+        Assert.Equal(QifToken.BOF, this.reader.Kind);
         this.reader.MoveNext();
     }
 
@@ -59,19 +59,19 @@ public class QifReaderTests : TestBase
         this.ReadField("N", "Nuther Account");
         this.ReadField("T", "Oth A");
         this.reader.ReadEndOfRecord();
-        Assert.Equal(QifParser.TokenKind.EOF, this.reader.Kind);
+        Assert.Equal(QifToken.EOF, this.reader.Kind);
     }
 
     [Fact]
     public void TryRead_RealWorldLoop()
     {
-        while (this.reader.Kind == QifParser.TokenKind.Header)
+        while (this.reader.Kind == QifToken.Header)
         {
             this.Logger.WriteLine($"{this.reader.Header.Name} {this.reader.Header.Value} records:");
             this.reader.MoveNext();
-            while (this.reader.Kind == QifParser.TokenKind.Field)
+            while (this.reader.Kind == QifToken.Field)
             {
-                while (this.reader.Kind == QifParser.TokenKind.Field)
+                while (this.reader.Kind == QifToken.Field)
                 {
                     this.Logger.WriteLine($"\t{this.reader.Field.Name} = {this.reader.Field.Value}");
                     this.reader.MoveNext();
@@ -82,7 +82,7 @@ public class QifReaderTests : TestBase
             }
         }
 
-        Assert.Equal(QifParser.TokenKind.EOF, this.reader.Kind);
+        Assert.Equal(QifToken.EOF, this.reader.Kind);
     }
 
     [Fact]
@@ -90,20 +90,20 @@ public class QifReaderTests : TestBase
     {
         for (int i = 0; i < 5; i++)
         {
-            Assert.Equal(QifParser.TokenKind.Header, this.reader.Kind);
-            Assert.True(this.reader.MoveToNext(QifParser.TokenKind.Header));
+            Assert.Equal(QifToken.Header, this.reader.Kind);
+            Assert.True(this.reader.MoveToNext(QifToken.Header));
         }
 
-        Assert.False(this.reader.MoveToNext(QifParser.TokenKind.Header));
-        Assert.Equal(QifParser.TokenKind.EOF, this.reader.Kind);
+        Assert.False(this.reader.MoveToNext(QifToken.Header));
+        Assert.Equal(QifToken.EOF, this.reader.Kind);
     }
 
     [Fact]
     public void ReadFieldAsString()
     {
-        Assumes.True(this.reader.Kind == QifParser.TokenKind.Header);
+        Assumes.True(this.reader.Kind == QifToken.Header);
         Assert.Throws<InvalidOperationException>(() => this.reader.ReadFieldAsString());
-        this.reader.MovePast(QifParser.TokenKind.Header);
+        this.reader.MovePast(QifToken.Header);
         Assert.Equal("Market adjustment", this.reader.ReadFieldAsString());
     }
 
@@ -151,7 +151,7 @@ public class QifReaderTests : TestBase
 
     private bool TrySkipToType(string type)
     {
-        while (this.reader.MoveToNext(QifParser.TokenKind.Header))
+        while (this.reader.MoveToNext(QifToken.Header))
         {
             if (QifUtilities.Equals("Type", this.reader.Header.Name) && QifUtilities.Equals(type, this.reader.Header.Value))
             {
@@ -164,7 +164,7 @@ public class QifReaderTests : TestBase
 
     private bool TrySkipToField(string fieldName)
     {
-        while (this.reader.MoveToNext(QifParser.TokenKind.Field))
+        while (this.reader.MoveToNext(QifToken.Field))
         {
             if (QifUtilities.Equals(fieldName, this.reader.Field.Name))
             {

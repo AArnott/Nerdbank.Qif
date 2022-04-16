@@ -58,19 +58,19 @@ public class QifSerializer
             // Remember the last account we saw so we can link its transactions to it.
             Account? lastAccountRead = null;
 
-            if (reader.Kind == QifParser.TokenKind.BOF)
+            if (reader.Kind == QifToken.BOF)
             {
                 reader.MoveNext();
             }
 
-            while (reader.Kind == QifParser.TokenKind.Header)
+            while (reader.Kind == QifToken.Header)
             {
                 if (QifUtilities.Equals("Type", reader.Header.Name))
                 {
                     if (QifUtilities.Equals("Bank", reader.Header.Value))
                     {
                         reader.MoveNext();
-                        while (reader.Kind == QifParser.TokenKind.Field)
+                        while (reader.Kind == QifToken.Field)
                         {
                             result.BankTransactions.Add(this.ReadBankTransaction(reader) with { AccountName = lastAccountRead?.Name });
                         }
@@ -78,7 +78,7 @@ public class QifSerializer
                     else if (QifUtilities.Equals("Cash", reader.Header.Value))
                     {
                         reader.MoveNext();
-                        while (reader.Kind == QifParser.TokenKind.Field)
+                        while (reader.Kind == QifToken.Field)
                         {
                             result.CashTransactions.Add(this.ReadBankTransaction(reader) with { AccountName = lastAccountRead?.Name });
                         }
@@ -86,7 +86,7 @@ public class QifSerializer
                     else if (QifUtilities.Equals("CCard", reader.Header.Value))
                     {
                         reader.MoveNext();
-                        while (reader.Kind == QifParser.TokenKind.Field)
+                        while (reader.Kind == QifToken.Field)
                         {
                             result.CreditCardTransactions.Add(this.ReadBankTransaction(reader) with { AccountName = lastAccountRead?.Name });
                         }
@@ -94,7 +94,7 @@ public class QifSerializer
                     else if (QifUtilities.Equals("Oth A", reader.Header.Value))
                     {
                         reader.MoveNext();
-                        while (reader.Kind == QifParser.TokenKind.Field)
+                        while (reader.Kind == QifToken.Field)
                         {
                             result.AssetTransactions.Add(this.ReadBankTransaction(reader) with { AccountName = lastAccountRead?.Name });
                         }
@@ -102,7 +102,7 @@ public class QifSerializer
                     else if (QifUtilities.Equals("Oth L", reader.Header.Value))
                     {
                         reader.MoveNext();
-                        while (reader.Kind == QifParser.TokenKind.Field)
+                        while (reader.Kind == QifToken.Field)
                         {
                             result.LiabilityTransactions.Add(this.ReadBankTransaction(reader) with { AccountName = lastAccountRead?.Name });
                         }
@@ -110,7 +110,7 @@ public class QifSerializer
                     else if (QifUtilities.Equals("Cat", reader.Header.Value))
                     {
                         reader.MoveNext();
-                        while (reader.Kind == QifParser.TokenKind.Field)
+                        while (reader.Kind == QifToken.Field)
                         {
                             result.Categories.Add(this.ReadCategory(reader));
                         }
@@ -118,7 +118,7 @@ public class QifSerializer
                     else if (QifUtilities.Equals("Class", reader.Header.Value))
                     {
                         reader.MoveNext();
-                        while (reader.Kind == QifParser.TokenKind.Field)
+                        while (reader.Kind == QifToken.Field)
                         {
                             result.Classes.Add(this.ReadClass(reader));
                         }
@@ -126,7 +126,7 @@ public class QifSerializer
                     else if (QifUtilities.Equals("Invst", reader.Header.Value))
                     {
                         reader.MoveNext();
-                        while (reader.Kind == QifParser.TokenKind.Field)
+                        while (reader.Kind == QifToken.Field)
                         {
                             result.InvestmentTransactions.Add(this.ReadInvestmentTransaction(reader));
                         }
@@ -134,7 +134,7 @@ public class QifSerializer
                     else if (QifUtilities.Equals("Memorized", reader.Header.Value))
                     {
                         reader.MoveNext();
-                        while (reader.Kind == QifParser.TokenKind.Field)
+                        while (reader.Kind == QifToken.Field)
                         {
                             result.MemorizedTransactions.Add(this.ReadMemorizedTransaction(reader));
                         }
@@ -142,13 +142,13 @@ public class QifSerializer
                     else
                     {
                         // We don't recognize this header, so skip its entire content.
-                        reader.MoveToNext(QifParser.TokenKind.Header);
+                        reader.MoveToNext(QifToken.Header);
                     }
                 }
                 else if (QifUtilities.Equals("Account", reader.Header.Name))
                 {
                     reader.MoveNext();
-                    while (reader.Kind == QifParser.TokenKind.Field)
+                    while (reader.Kind == QifToken.Field)
                     {
                         Account account = this.ReadAccount(reader);
                         lastAccountRead = account;
@@ -158,7 +158,7 @@ public class QifSerializer
                 else
                 {
                     // We don't recognize this header, so skip its entire content.
-                    reader.MoveToNext(QifParser.TokenKind.Header);
+                    reader.MoveToNext(QifToken.Header);
                 }
             }
 

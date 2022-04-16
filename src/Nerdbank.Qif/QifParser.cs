@@ -12,7 +12,7 @@ namespace Nerdbank.Qif;
 /// Use the <see cref="QifReader"/> for a more convenient API.
 /// </remarks>
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
-public class QifParser : IDisposable
+public partial class QifParser : IDisposable
 {
     private static readonly char[] Whitespace = new[] { '\t', ' ' };
     private readonly TextReader reader;
@@ -29,43 +29,12 @@ public class QifParser : IDisposable
     }
 
     /// <summary>
-    /// The kinds of tokens that may appear in a QIF file.
-    /// </summary>
-    public enum TokenKind
-    {
-        /// <summary>
-        /// The beginning of the file, before <see cref="Read"/> is called.
-        /// </summary>
-        BOF,
-
-        /// <summary>
-        /// The end of the file, after <see cref="Read"/> has returned <see langword="false"/>.
-        /// </summary>
-        EOF,
-
-        /// <summary>
-        /// The reader is positioned at a <c>!</c> header (e.g. <c>!Type:</c>, <c>!Account</c>).
-        /// </summary>
-        Header,
-
-        /// <summary>
-        /// The reader is positioned at a detail line.
-        /// </summary>
-        Field,
-
-        /// <summary>
-        /// The reader is positioned at the end of a list of fields for an individual record.
-        /// </summary>
-        EndOfRecord,
-    }
-
-    /// <summary>
     /// Gets the kind of token that the reader is positioned at.
     /// </summary>
-    public TokenKind Kind { get; private set; } = TokenKind.BOF;
+    public QifToken Kind { get; private set; } = QifToken.BOF;
 
     /// <summary>
-    /// Gets the most recently read <see cref="TokenKind.Header" /> token.
+    /// Gets the most recently read <see cref="QifToken.Header" /> token.
     /// </summary>
     public (ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) CurrentHeader { get; private set; }
 
@@ -86,12 +55,12 @@ public class QifParser : IDisposable
     /// Reads the next token from the input stream.
     /// </summary>
     /// <returns>The kind of token that was read. Get details of the token from properties on this class.</returns>
-    public TokenKind Read()
+    public QifToken Read()
     {
         string? line = this.reader.ReadLine();
         if (line is null)
         {
-            return this.Kind = TokenKind.EOF;
+            return this.Kind = QifToken.EOF;
         }
 
         this.lineNumber++;
@@ -103,7 +72,7 @@ public class QifParser : IDisposable
         {
             case '!':
                 ThrowIfNot(line.Length > 1, this.lineNumber, "Line too short.");
-                this.Kind = TokenKind.Header;
+                this.Kind = QifToken.Header;
                 int colonIndex = line.IndexOf(':');
                 this.CurrentHeader = colonIndex < 0
                     ? (line.AsMemory(1), default)
@@ -111,15 +80,15 @@ public class QifParser : IDisposable
                 break;
             case '^':
                 ThrowIfNot(line.Length == 1, this.lineNumber, "End of record line too long");
-                this.Kind = TokenKind.EndOfRecord;
+                this.Kind = QifToken.EndOfRecord;
                 break;
             case 'X':
                 ThrowIfNot(line.Length >= 2, this.lineNumber, "Line too short.");
-                this.Kind = TokenKind.Field;
+                this.Kind = QifToken.Field;
                 this.Field = (line.AsMemory(0, 2), TrimEnd(line.AsMemory(2)));
                 break;
             default:
-                this.Kind = TokenKind.Field;
+                this.Kind = QifToken.Field;
                 this.Field = (line.AsMemory(0, 1), TrimEnd(line.AsMemory(1)));
                 break;
         }

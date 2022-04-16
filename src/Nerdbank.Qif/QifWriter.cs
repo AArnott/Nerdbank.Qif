@@ -71,7 +71,7 @@ public class QifWriter
     }
 
     /// <summary>
-    /// Writes the <see cref="QifParser.TokenKind.EndOfRecord"/> token.
+    /// Writes the <see cref="QifToken.EndOfRecord"/> token.
     /// </summary>
     public void WriteEndOfRecord()
     {
