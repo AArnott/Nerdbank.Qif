@@ -692,6 +692,7 @@ Nclass2
         {
             FormatProvider = culture is null ? CultureInfo.InvariantCulture : new CultureInfo(culture),
         };
+        reader.MoveNext();
         return readMethod(reader);
     }
 

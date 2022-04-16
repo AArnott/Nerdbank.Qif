@@ -12,7 +12,6 @@ namespace Nerdbank.Qif;
 public class QifReader : IDisposable
 {
     private readonly QifParser parser;
-    private bool lastReadConsumed = true;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="QifReader"/> class.
@@ -42,118 +41,52 @@ public class QifReader : IDisposable
     public QifParser.TokenKind Kind => this.parser.Kind;
 
     /// <summary>
-    /// Gets the value of the field at the current reader position.
+    /// Gets the value of the header at the current reader position.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
-    public ReadOnlyMemory<char> Field
+    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifParser.TokenKind.Header"/>.</exception>
+    public (ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) Header
     {
         get
         {
-            this.ThrowIfNotAtField();
-            return this.parser.Field.Value;
+            this.ThrowIfNotAt(QifParser.TokenKind.Header);
+            return this.parser.CurrentHeader;
         }
     }
 
     /// <summary>
-    /// Reads the next token, if it is a <c>!</c> header (e.g. <c>!Type:</c> or <c>!Account</c>).
+    /// Gets the value of the field at the current reader position.
     /// </summary>
-    /// <param name="name">Receives the header name (usually <c>Type</c> or <c>Account</c>).</param>
-    /// <param name="value">Receives the header value. May be empty (e.g. for <c>Account</c> headers).</param>
-    /// <returns><see langword="true" /> if the next token is a <see cref="QifParser.TokenKind.Header"/>; otherwise <see langword="false" />.</returns>
-    public bool TryReadHeader(out ReadOnlyMemory<char> name, out ReadOnlyMemory<char> value)
+    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifParser.TokenKind.Field"/>.</exception>
+    public (ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) Field
     {
-        if (this.TryGetNextTokenKind(QifParser.TokenKind.Header) &&
-            this.parser.CurrentHeader is (ReadOnlyMemory<char> headerName, ReadOnlyMemory<char> headerValue))
+        get
         {
-            name = headerName;
-            value = headerValue;
-            return true;
+            this.ThrowIfNotAt(QifParser.TokenKind.Field);
+            return this.parser.Field;
         }
-
-        name = default;
-        value = default;
-        return false;
     }
 
     /// <summary>
-    /// Reads the next token, if it is a record detail line.
-    /// </summary>
-    /// <param name="name">Receives the field name (usually one character, or two if the first is an <c>X</c>).</param>
-    /// <param name="value">Receives the field value.</param>
-    /// <returns><see langword="true" /> if the next token is a <see cref="QifParser.TokenKind.Field"/>; otherwise <see langword="false" />.</returns>
-    public bool TryReadField(out ReadOnlyMemory<char> name, out ReadOnlyMemory<char> value)
-    {
-        if (this.TryGetNextTokenKind(QifParser.TokenKind.Field) &&
-            this.parser.Field is (ReadOnlyMemory<char> fieldName, ReadOnlyMemory<char> fieldValue))
-        {
-            name = fieldName;
-            value = fieldValue;
-            return true;
-        }
-
-        name = default;
-        value = default;
-        return false;
-    }
-
-    /// <summary>
-    /// Moves past the current end of record token, if that is the current reading position.
-    /// </summary>
-    /// <returns><see langword="true" /> if the next token is a <see cref="QifParser.TokenKind.EndOfRecord"/>; otherwise <see langword="false" />.</returns>
-    public bool TryReadEndOfRecord()
-    {
-        return this.TryGetNextTokenKind(QifParser.TokenKind.EndOfRecord);
-    }
-
-    /// <summary>
-    /// Returns a value indicating whether the reader has reached the end of the file.
-    /// </summary>
-    /// <returns><see langword="true" /> if the next token is a <see cref="QifParser.TokenKind.EOF"/>; otherwise <see langword="false" />.</returns>
-    public bool TryReadEndOfFile() => this.TryGetNextTokenKind(QifParser.TokenKind.EOF);
-
-    /// <summary>
-    /// Advances the reader to the next token of a given kind.
-    /// </summary>
-    /// <param name="kind">The kind of token to skip to.</param>
-    /// <returns><see langword="true" /> if a token of the required kind was found; <see langword="false" /> if the end of file was reached first.</returns>
-    public bool TrySkipToToken(QifParser.TokenKind kind)
-    {
-        do
-        {
-            if (this.parser.Read() == QifParser.TokenKind.EOF)
-            {
-                return false;
-            }
-        }
-        while (this.parser.Kind != kind);
-
-        this.lastReadConsumed = false;
-        return true;
-    }
-
-    /// <summary>
-    /// Parses the field value read during the last call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>
-    /// as a <see cref="string"/>.
+    /// Parses the field value as a <see cref="string"/>.
     /// </summary>
     /// <returns>The parsed value.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
-    public string ReadFieldAsString() => this.Field.ToString();
+    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifParser.TokenKind.Field"/>.</exception>
+    public string ReadFieldAsString() => this.Field.Value.ToString();
 
     /// <summary>
-    /// Parses the field value read during the last call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>
-    /// as a <see cref="DateTime"/>.
+    /// Parses the field value as a <see cref="DateTime"/>.
     /// </summary>
     /// <returns>The parsed value.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifParser.TokenKind.Field"/>.</exception>
     public virtual DateTime ReadFieldAsDate()
     {
-        if (this.Field.Span.Length > 50)
+        if (this.Field.Value.Span.Length > 50)
         {
             throw new InvalidTransactionException("Date value too long.");
         }
 
-        Span<char> mutableDate = stackalloc char[this.Field.Span.Length];
-        this.Field.Span.CopyTo(mutableDate);
+        Span<char> mutableDate = stackalloc char[this.Field.Value.Span.Length];
+        this.Field.Value.Span.CopyTo(mutableDate);
 
         // Replace ' with /, and space with 0.
         for (int i = 0; i < mutableDate.Length; i++)
@@ -172,35 +105,52 @@ public class QifReader : IDisposable
     }
 
     /// <summary>
-    /// Parses the field value read during the last call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>
-    /// as a <see cref="long"/>.
+    /// Parses the field value as a <see cref="long"/>.
     /// </summary>
     /// <returns>The parsed value.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
-    public virtual long ReadFieldAsInt64() => long.Parse(this.Field.Span, NumberStyles.Any, this.FormatProvider);
+    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifParser.TokenKind.Field"/>.</exception>
+    public virtual long ReadFieldAsInt64() => long.Parse(this.Field.Value.Span, NumberStyles.Any, this.FormatProvider);
 
     /// <summary>
-    /// Parses the field value read during the last call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>
-    /// as a <see cref="decimal"/>.
+    /// Parses the field value as a <see cref="decimal"/>.
     /// </summary>
     /// <returns>The parsed value.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
-    public virtual decimal ReadFieldAsDecimal() => decimal.Parse(this.Field.Span, NumberStyles.Any, this.FormatProvider);
+    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifParser.TokenKind.Field"/>.</exception>
+    public virtual decimal ReadFieldAsDecimal() => decimal.Parse(this.Field.Value.Span, NumberStyles.Any, this.FormatProvider);
 
     /// <summary>
-    /// Parses the field value read during the last call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>
-    /// as a <see cref="ClearedState"/>.
+    /// Parses the field value as a <see cref="ClearedState"/>.
     /// </summary>
     /// <returns>The parsed value.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if the last read operation was not a successful call to <see cref="TryReadField(out ReadOnlyMemory{char}, out ReadOnlyMemory{char})"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifParser.TokenKind.Field"/>.</exception>
     public virtual ClearedState ReadFieldAsClearedState()
     {
-        return this.Field.Length == 0 ? ClearedState.None : char.ToUpperInvariant(this.Field.Span[0]) switch
+        return this.Field.Value.Length == 0 ? ClearedState.None : char.ToUpperInvariant(this.Field.Value.Span[0]) switch
         {
             '*' or 'C' => ClearedState.Cleared,
             'R' or 'X' => ClearedState.Reconciled,
             _ => throw new InvalidTransactionException("Unrecognized reconciled status."),
         };
+    }
+
+    /// <summary>
+    /// Moves the reader to the next line.
+    /// </summary>
+    public void MoveNext() => this.parser.Read();
+
+    /// <summary>
+    /// Advances the reader to the next token of a given kind.
+    /// </summary>
+    /// <param name="kind">The kind of token to skip to.</param>
+    /// <returns><see langword="true" /> if a token of the required kind was found; <see langword="false" /> if the end of file was reached first.</returns>
+    public bool MoveToNext(QifParser.TokenKind kind)
+    {
+        do
+        {
+            this.MoveNext();
+        }
+        while (this.parser.Kind != kind && this.parser.Kind != QifParser.TokenKind.EOF);
+        return this.parser.Kind == kind;
     }
 
     /// <inheritdoc/>
@@ -210,27 +160,40 @@ public class QifReader : IDisposable
     }
 
     /// <summary>
-    /// Reads the <see cref="QifParser.TokenKind.EndOfRecord"/> token at the current position.
+    /// Reads beyond the current <see cref="QifParser.TokenKind.EndOfRecord"/> token.
     /// </summary>
-    /// <exception cref="InvalidTransactionException">Thrown if the current token is not the expected token.</exception>
-    internal void ReadEndOfRecord()
+    public void ReadEndOfRecord() => this.MovePast(QifParser.TokenKind.EndOfRecord);
+
+    /// <summary>
+    /// Reads beyond the current token.
+    /// </summary>
+    /// <param name="kind">The type of token the caller believes is the current one.</param>
+    /// <exception cref="InvalidOperationException">Thrown if the current token is not of type <paramref name="kind"/>.</exception>
+    public void MovePast(QifParser.TokenKind kind)
     {
-        if (!this.TryReadEndOfRecord())
-        {
-            throw new InvalidTransactionException("Missing expected end of record token.");
-        }
+        this.ThrowIfNotAt(kind);
+        this.MoveNext();
     }
 
-    private bool TryGetNextTokenKind(QifParser.TokenKind expectedKind)
+    /// <summary>
+    /// Loops over the fields in the current set, skipping the current token if it is a <see cref="QifParser.TokenKind.Header"/>.
+    /// </summary>
+    /// <returns>A sequence of fields.</returns>
+    public IEnumerable<(ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value)> ReadTheseFields()
     {
-        if (this.lastReadConsumed)
+        if (this.Kind == QifParser.TokenKind.Header)
         {
-            this.parser.Read();
+            this.MoveNext();
         }
 
-        this.lastReadConsumed = this.parser.Kind == expectedKind;
-        return this.lastReadConsumed;
+        while (this.Kind == QifParser.TokenKind.Field)
+        {
+            yield return this.Field;
+            this.MoveNext();
+        }
+
+        this.ReadEndOfRecord();
     }
 
-    private void ThrowIfNotAtField() => Verify.Operation(this.parser.Kind == QifParser.TokenKind.Field, "Reader has not just read a field.");
+    private void ThrowIfNotAt(QifParser.TokenKind kind) => Verify.Operation(this.parser.Kind == kind, "Reader is not at a {0}.", kind);
 }
