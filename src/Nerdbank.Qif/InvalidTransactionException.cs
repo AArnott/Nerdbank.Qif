@@ -42,7 +42,7 @@ public class InvalidTransactionException : Exception
     /// Initializes a new instance of the <see cref="InvalidTransactionException"/> class.
     /// </summary>
     /// <param name="transaction">The transaction.</param>
-    public InvalidTransactionException(TransactionBase transaction)
+    public InvalidTransactionException(object transaction)
         : this(string.Format(CultureInfo.CurrentCulture, Strings.InvalidBankTransaction, transaction), transaction)
     {
     }
@@ -52,7 +52,7 @@ public class InvalidTransactionException : Exception
     /// </summary>
     /// <param name="message">The message.</param>
     /// <param name="transaction">The transaction.</param>
-    public InvalidTransactionException(string message, TransactionBase transaction)
+    public InvalidTransactionException(string message, object transaction)
         : this(message, null, transaction)
     {
     }
@@ -63,7 +63,7 @@ public class InvalidTransactionException : Exception
     /// <param name="message">The message.</param>
     /// <param name="innerException">The inner exception.</param>
     /// <param name="transaction">The transaction.</param>
-    public InvalidTransactionException(string? message, Exception? innerException, TransactionBase? transaction)
+    public InvalidTransactionException(string? message, Exception? innerException, object? transaction)
         : base(message, innerException)
     {
         this.Transaction = transaction;
@@ -73,9 +73,5 @@ public class InvalidTransactionException : Exception
     /// Gets the transaction.
     /// </summary>
     /// <value>The transaction.</value>
-    public TransactionBase? Transaction
-    {
-        get;
-        private set;
-    }
+    public object? Transaction { get; }
 }

@@ -1,0 +1,25 @@
+﻿!Type:Tag
+NMarket adjustment
+^
+NReimbursable
+^
+!Type:Bank
+D1/1/2008
+T1500
+N123
+PPaycheck
+LIncome.Salary
+^
+!Option:AutoSwitch
+!Account
+N360 Checking
+TBank
+^
+NAmazon Payments
+TBank
+^
+!Clear:AutoSwitch
+!Account
+NNuther Account
+TOth A
+^
