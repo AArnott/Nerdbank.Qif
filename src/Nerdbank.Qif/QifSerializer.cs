@@ -28,6 +28,9 @@ public class QifSerializer
         WriteRecord("Type", "Memorized", value.MemorizedTransactions, this.Write);
         WriteRecord("Type", "Cat", value.Categories, this.Write);
         WriteRecord("Type", "Class", value.Classes, this.Write);
+
+        // Finish with all account details at the end so that no transactions follow the last account
+        // which would be misinterpreted by importers as associating all those transactions with that account.
         WriteRecord("Account", null, value.Accounts, this.Write);
 
         void WriteRecord<T>(string headerName, string? headerValue, IReadOnlyCollection<T> records, Action<QifWriter, T> recordWriter)
