@@ -60,6 +60,42 @@ public partial record BankTransaction(DateTime Date, decimal Amount)
     /// </summary>
     public string? AccountName { get; init; }
 
+    /// <inheritdoc/>
+    public virtual bool Equals(BankTransaction? other)
+    {
+        return (object)this == other ||
+            ((object?)other != null
+            && this.EqualityContract == other!.EqualityContract
+            && EqualityComparer<DateTime>.Default.Equals(this.Date, other!.Date)
+            && EqualityComparer<decimal>.Default.Equals(this.Amount, other!.Amount)
+            && EqualityComparer<ClearedState>.Default.Equals(this.ClearedStatus, other!.ClearedStatus)
+            && EqualityComparer<string?>.Default.Equals(this.Number, other!.Number)
+            && EqualityComparer<string?>.Default.Equals(this.Payee, other!.Payee)
+            && EqualityComparer<string?>.Default.Equals(this.Memo, other!.Memo)
+            && EqualityComparer<string?>.Default.Equals(this.Category, other!.Category)
+            && ByValueCollectionComparer<string>.Default.Equals(this.Address, other!.Address)
+            && ByValueCollectionComparer<BankSplit>.Default.Equals(this.Splits, other!.Splits)
+            && EqualityComparer<string?>.Default.Equals(this.AccountName, other!.AccountName));
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        HashCode hash = default;
+        hash.Add(this.EqualityContract);
+        hash.Add(this.Date);
+        hash.Add(this.Amount);
+        hash.Add(this.ClearedStatus);
+        hash.Add(this.Number);
+        hash.Add(this.Payee);
+        hash.Add(this.Memo);
+        hash.Add(this.Category);
+        hash.Add(this.Address, ByValueCollectionComparer<string>.Default);
+        hash.Add(this.Splits, ByValueCollectionComparer<BankSplit>.Default);
+        hash.Add(this.AccountName);
+        return hash.ToHashCode();
+    }
+
     /// <summary>
     /// The names of each field that may appear in this record.
     /// </summary>

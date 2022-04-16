@@ -393,12 +393,7 @@ DA bonus
     [Fact]
     public void ReadDocument()
     {
-        const string qifSource = @"!Account
-NAccount1
-^
-NAccount2
-^
-!Type:Bank
+        const string qifSource = @"!Type:Bank
 D02/03/2013
 T9
 ^
@@ -456,6 +451,11 @@ Ncat2
 Nclass1
 ^
 Nclass2
+^
+!Account
+NAccount1
+^
+NAccount2
 ^
 ";
 
@@ -558,12 +558,7 @@ Nclass2
     [Fact]
     public void Write_Document()
     {
-        string qifSource = @"!Account
-NAccount1
-^
-NAccount2
-^
-!Type:Bank
+        string qifSource = @"!Type:Bank
 D02/03/2013
 T9
 ^
@@ -621,6 +616,11 @@ Ncat2
 Nclass1
 ^
 Nclass2
+^
+!Account
+NAccount1
+^
+NAccount2
 ^
 ";
         this.AssertSerialized(

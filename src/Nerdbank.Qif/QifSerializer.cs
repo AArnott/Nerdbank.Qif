@@ -19,7 +19,6 @@ public class QifSerializer
     /// <param name="value">The document to be serialized.</param>
     public virtual void Write(QifWriter writer, QifDocument value)
     {
-        WriteRecord("Account", null, value.Accounts, this.Write);
         WriteRecord("Type", "Bank", value.BankTransactions, this.Write);
         WriteRecord("Type", "Oth A", value.AssetTransactions, this.Write);
         WriteRecord("Type", "Oth L", value.LiabilityTransactions, this.Write);
@@ -29,6 +28,7 @@ public class QifSerializer
         WriteRecord("Type", "Memorized", value.MemorizedTransactions, this.Write);
         WriteRecord("Type", "Cat", value.Categories, this.Write);
         WriteRecord("Type", "Class", value.Classes, this.Write);
+        WriteRecord("Account", null, value.Accounts, this.Write);
 
         void WriteRecord<T>(string headerName, string? headerValue, IReadOnlyCollection<T> records, Action<QifWriter, T> recordWriter)
         {
