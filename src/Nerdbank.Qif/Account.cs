@@ -43,6 +43,11 @@ public abstract record Account(string Name)
     public abstract AccountType? AccountType { get; }
 
     /// <summary>
+    /// Gets the list of transactions in this account.
+    /// </summary>
+    public abstract IReadOnlyList<Transaction> Transactions { get; }
+
+    /// <summary>
     /// Well-known values for the <see cref="Type"/> property.
     /// </summary>
     public static class Types

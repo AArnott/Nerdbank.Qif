@@ -12,10 +12,8 @@ namespace Nerdbank.Qif;
 /// <param name="Name">The name of the account.</param>
 public record BankAccount(string Type, string Name) : Account(Name)
 {
-    /// <summary>
-    /// Gets the collection of transactions that belong to this account.
-    /// </summary>
-    public List<BankTransaction> Transactions { get; } = new();
+    /// <inheritdoc/>
+    public override List<BankTransaction> Transactions { get; } = new();
 
     /// <inheritdoc/>
     public override AccountType? AccountType => this.Type is null ? null : QifSerializer.GetAccountTypeFromString(this.Type);

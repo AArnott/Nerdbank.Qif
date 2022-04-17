@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1</TargetFrameworks>
+    <TargetFramework>net6.0</TargetFramework>
     <Description>Quicken Interchange Format (QIF) I/O library</Description>
     <Copyright>Copyright © 2022</Copyright>
     <Authors>Andrew Arnott</Authors>

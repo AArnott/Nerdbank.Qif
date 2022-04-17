@@ -9,7 +9,7 @@ namespace Nerdbank.Qif;
 /// <param name="AccountType">The type of account this transaction is found within, or the type of this transaction.</param>
 /// <param name="Date">The date of the transaction.</param>
 /// <param name="Amount">The amount of the transaction.</param>
-public partial record BankTransaction(AccountType AccountType, DateTime Date, decimal Amount)
+public partial record BankTransaction(AccountType AccountType, DateTime Date, decimal Amount) : Transaction(Date)
 {
     /// <summary>
     /// The QIF header that introduces <see cref="BankTransaction"/> records.
@@ -17,24 +17,9 @@ public partial record BankTransaction(AccountType AccountType, DateTime Date, de
     public static readonly (string Name, string Value) Header = ("Type", "Bank");
 
     /// <summary>
-    /// Gets the cleared or reconciled state of the transaction.
-    /// </summary>
-    public ClearedState ClearedStatus { get; init; }
-
-    /// <summary>
     /// Gets the check number. Can also be "Deposit", "Transfer", "Print", "ATM", "EFT".
     /// </summary>
     public string? Number { get; init; }
-
-    /// <summary>
-    /// Gets the transaction payee.
-    /// </summary>
-    public string? Payee { get; init; }
-
-    /// <summary>
-    /// Gets the transaction memo.
-    /// </summary>
-    public string? Memo { get; init; }
 
     /// <summary>
     /// Gets the category assigned to the transaction.

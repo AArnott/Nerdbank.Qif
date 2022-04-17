@@ -9,10 +9,8 @@ namespace Nerdbank.Qif;
 /// <param name="Name">The name of the account.</param>
 public record InvestmentAccount(string Name) : Account(Name)
 {
-    /// <summary>
-    /// Gets a collection of investment transactions that belong to this account.
-    /// </summary>
-    public List<InvestmentTransaction> Transactions { get; } = new();
+    /// <inheritdoc/>
+    public override List<InvestmentTransaction> Transactions { get; } = new();
 
     /// <inheritdoc/>
     public override AccountType? AccountType => Qif.AccountType.Investment;
