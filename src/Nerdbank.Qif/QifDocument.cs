@@ -17,16 +17,7 @@ public class QifDocument
     /// For transactions for which an account is known, search <see cref="Accounts"/> and use
     /// the <see cref="BankAccount.Transactions"/> collection.
     /// </remarks>
-    public List<BankTransaction> Transactions { get; } = new();
-
-    /// <summary>
-    /// Gets a collection of investment transactions that do not belong to an account.
-    /// </summary>
-    /// <remarks>
-    /// For transactions for which an account is known, search <see cref="Accounts"/> and use
-    /// the <see cref="InvestmentAccount.Transactions"/> collection.
-    /// </remarks>
-    public List<InvestmentTransaction> InvestmentTransactions { get; } = new();
+    public List<Transaction> Transactions { get; } = new();
 
     /// <summary>
     /// Gets a collection of memorized transaction list transactions.

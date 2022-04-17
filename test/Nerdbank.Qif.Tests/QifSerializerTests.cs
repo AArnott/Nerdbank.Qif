@@ -419,6 +419,11 @@ T7
 D02/03/2013
 T8
 ^
+!Type:Invst
+D02/03/2013
+^
+D02/04/2013
+^
 !Type:Oth A
 D02/03/2013
 T1
@@ -432,11 +437,6 @@ T3
 ^
 D02/03/2013
 T4
-^
-!Type:Invst
-D02/03/2013
-^
-D02/04/2013
 ^
 !Type:Memorized
 KD
@@ -468,7 +468,7 @@ TBank
 
         QifDocument actual = Read(qifSource, this.serializer.ReadDocument);
         QifDocument expected = CreateSampleDocument();
-        Assert.Equal<BankTransaction>(expected.Transactions, actual.Transactions);
+        Assert.Equal<Transaction>(expected.Transactions, actual.Transactions);
     }
 
     [Fact]
@@ -618,6 +618,11 @@ T7
 D02/03/2013
 T8
 ^
+!Type:Invst
+D02/03/2013
+^
+D02/04/2013
+^
 !Type:Oth A
 D02/03/2013
 T1
@@ -631,11 +636,6 @@ T3
 ^
 D02/03/2013
 T4
-^
-!Type:Invst
-D02/03/2013
-^
-D02/04/2013
 ^
 !Type:Memorized
 KD
@@ -736,6 +736,8 @@ D02/04/2013
                 new BankTransaction(AccountType.Cash, Date, 6),
                 new BankTransaction(AccountType.CreditCard, Date, 7),
                 new BankTransaction(AccountType.CreditCard, Date, 8),
+                new InvestmentTransaction(Date),
+                new InvestmentTransaction(Date2),
                 new BankTransaction(AccountType.Asset, Date, 1),
                 new BankTransaction(AccountType.Asset, Date, 2),
                 new BankTransaction(AccountType.Liability, Date, 3),
@@ -745,11 +747,6 @@ D02/04/2013
             {
                 new MemorizedTransaction(MemorizedTransactionType.Deposit, Date, 10),
                 new MemorizedTransaction(MemorizedTransactionType.Deposit, Date2, 10),
-            },
-            InvestmentTransactions =
-            {
-                new InvestmentTransaction(Date),
-                new InvestmentTransaction(Date2),
             },
             Categories =
             {

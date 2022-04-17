@@ -30,7 +30,6 @@ public class QifSerializer
             WriteRecord("Type", GetAccountTypeString(txGroup.Key), txGroup, this.Write);
         }
 
-        WriteRecord("Type", Account.Types.Investment, value.InvestmentTransactions, this.Write);
         WriteRecord("Type", Account.Types.Memorized, value.MemorizedTransactions, this.Write);
         WriteRecord("Type", "Cat", value.Categories, this.Write);
         WriteRecord("Type", "Class", value.Classes, this.Write);
@@ -93,16 +92,30 @@ public class QifSerializer
                             {
                                 case AccountType.Investment:
                                     InvestmentTransaction investmentTx = this.ReadInvestmentTransaction(reader);
-                                    List<InvestmentTransaction> investmentTxs = (lastAccountRead as InvestmentAccount)?.Transactions ?? result.InvestmentTransactions;
-                                    investmentTxs.Add(investmentTx);
+                                    if (lastAccountRead is InvestmentAccount investmentAccount)
+                                    {
+                                        investmentAccount.Transactions.Add(investmentTx);
+                                    }
+                                    else
+                                    {
+                                        result.Transactions.Add(investmentTx);
+                                    }
+
                                     break;
                                 case AccountType.Memorized:
                                     result.MemorizedTransactions.Add(this.ReadMemorizedTransaction(reader));
                                     break;
                                 default:
                                     BankTransaction bankTx = this.ReadBankTransaction(reader, accountType);
-                                    List<BankTransaction> bankTxs = (lastAccountRead as BankAccount)?.Transactions ?? result.Transactions;
-                                    bankTxs.Add(bankTx);
+                                    if (lastAccountRead is BankAccount bankAccount)
+                                    {
+                                        bankAccount.Transactions.Add(bankTx);
+                                    }
+                                    else
+                                    {
+                                        result.Transactions.Add(bankTx);
+                                    }
+
                                     break;
                             }
                         }
@@ -612,14 +625,14 @@ public class QifSerializer
         ClearedState clearedStatus = ClearedState.None;
         string? memo = null;
         string? action = null;
-        decimal commission = 0;
-        decimal price = 0;
-        decimal quantity = 0;
+        decimal? commission = null;
+        decimal? price = null;
+        decimal? quantity = null;
         string? security = null;
         string? payee = null;
-        decimal transactionAmount = 0;
+        decimal? transactionAmount = null;
         string? accountForTransfer = null;
-        decimal amountTransferred = 0;
+        decimal? amountTransferred = null;
 
         foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
         {
@@ -780,6 +793,23 @@ public class QifSerializer
             StatementBalanceDate = statementBalanceDate,
             StatementBalance = statementBalance,
         };
+    }
+
+    /// <inheritdoc cref="Write(QifWriter, Class)" />
+    public void Write(QifWriter writer, Transaction value)
+    {
+        if (value is BankTransaction bankTx)
+        {
+            this.Write(writer, bankTx);
+        }
+        else if (value is InvestmentTransaction investmentTx)
+        {
+            this.Write(writer, investmentTx);
+        }
+        else
+        {
+            throw new NotSupportedException();
+        }
     }
 
     internal static AccountType? GetAccountTypeFromString(ReadOnlySpan<char> type)

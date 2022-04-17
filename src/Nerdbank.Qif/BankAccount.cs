@@ -17,4 +17,20 @@ public record BankAccount(string Type, string Name) : Account(Name)
 
     /// <inheritdoc/>
     public override AccountType? AccountType => this.Type is null ? null : QifSerializer.GetAccountTypeFromString(this.Type);
+
+    /// <inheritdoc/>
+    public virtual bool Equals(BankAccount? other)
+    {
+        return (object)this == other || (base.Equals(other)
+            && EqualityComparer<string>.Default.Equals(this.Type, other!.Type)
+            && ByValueCollectionComparer<BankTransaction>.Default.Equals(this.Transactions, other!.Transactions));
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        return (((base.GetHashCode() * -1521134295)
+            + EqualityComparer<string>.Default.GetHashCode(this.Type)) * -1521134295)
+            + ByValueCollectionComparer<BankTransaction>.Default.GetHashCode(this.Transactions);
+    }
 }

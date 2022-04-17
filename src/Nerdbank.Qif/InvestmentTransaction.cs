@@ -7,7 +7,7 @@ namespace Nerdbank.Qif;
 /// An investment transaction.
 /// </summary>
 /// <param name="Date">The date of the transaction.</param>
-public record InvestmentTransaction(DateTime Date) : Transaction(Date)
+public record InvestmentTransaction(DateTime Date) : Transaction(AccountType.Investment, Date)
 {
     /// <summary>
     /// Gets the action.
