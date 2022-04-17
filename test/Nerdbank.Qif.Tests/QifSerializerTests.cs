@@ -28,7 +28,7 @@ PPaycheck
 LIncome.Salary
 ^
 ";
-        BankTransaction transaction = Read(qifSource, this.serializer.ReadBankTransaction);
+        BankTransaction transaction = Read(qifSource, r => this.serializer.ReadBankTransaction(r, AccountType.Bank));
         Assert.Equal(Date, transaction.Date);
         Assert.Equal(1500, transaction.Amount);
         Assert.Equal("123", transaction.Number);
@@ -46,7 +46,7 @@ PPaycheck
 LIncome.Salary
 ^
 ";
-        BankTransaction transaction = Read(qifSource, this.serializer.ReadBankTransaction, "en-GB");
+        BankTransaction transaction = Read(qifSource, r => this.serializer.ReadBankTransaction(r, AccountType.Bank), "en-GB");
         Assert.Equal(new DateTime(2013, 3, 2), transaction.Date);
         Assert.Equal(1500, transaction.Amount);
         Assert.Equal("123", transaction.Number);
@@ -78,7 +78,7 @@ ESplit3Memo
 $500
 ^
 ";
-        BankTransaction transaction = Read(qifSource, this.serializer.ReadBankTransaction);
+        BankTransaction transaction = Read(qifSource, r => this.serializer.ReadBankTransaction(r, AccountType.Bank));
         Assert.Equal(1500, transaction.Amount);
         Assert.Equal("123", transaction.Number);
         Assert.Equal(ClearedState.Cleared, transaction.ClearedStatus);
@@ -107,7 +107,7 @@ ZNotta # unrecognized field that should be skipped over
 LIncome.Salary
 ^
 ";
-        BankTransaction transaction = Read(qifSource, this.serializer.ReadBankTransaction);
+        BankTransaction transaction = Read(qifSource, r => this.serializer.ReadBankTransaction(r, AccountType.Bank));
         Assert.Equal("Paycheck", transaction.Payee);
         Assert.Equal("Income.Salary", transaction.Category);
     }
@@ -116,27 +116,32 @@ LIncome.Salary
     /// Quicken may preceed bank transactions with the account details to indicate those transactions belong to that account.
     /// </summary>
     [Fact]
-    public void CanImportAccountWithTransactions()
+    public void CanImportAccountsWithTransactions()
     {
-        string qifSource = @"!Clear:AutoSwitch
-!Option:AutoSwitch
-!Account
+        string qifSource = @"!Account
 NBank Account 1
 TBank
 ^
 !Type:Bank 
 D01/1/18
-U-400.00
 T-400.00
-CX
-NCard
-PMr Land Lord
-LRent
-^";
+^
+!Account
+NInv Account 1
+TInvst
+^
+!Type:Invst
+D01/1/19
+T-400.00
+^
+";
         QifDocument document = Read(qifSource, this.serializer.ReadDocument);
-        Assert.Single(document.Accounts);
-        Assert.Single(document.BankTransactions);
-        Assert.Equal("Bank Account 1", document.BankTransactions[0].AccountName);
+        Assert.Empty(document.Transactions);
+        Assert.Equal(2, document.Accounts.Count);
+        BankAccount bankAccount = Assert.IsType<BankAccount>(document.Accounts[0]);
+        InvestmentAccount investmentAccount = Assert.IsType<InvestmentAccount>(document.Accounts[1]);
+        Assert.Equal(new DateTime(2018, 1, 1), Assert.Single(bankAccount.Transactions).Date);
+        Assert.Equal(new DateTime(2019, 1, 1), Assert.Single(investmentAccount.Transactions).Date);
     }
 
     [Fact]
@@ -400,20 +405,6 @@ T9
 D02/03/2013
 T10
 ^
-!Type:Oth A
-D02/03/2013
-T1
-^
-D02/03/2013
-T2
-^
-!Type:Oth L
-D02/03/2013
-T3
-^
-D02/03/2013
-T4
-^
 !Type:Cash
 D02/03/2013
 T5
@@ -432,6 +423,20 @@ T8
 D02/03/2013
 ^
 D02/04/2013
+^
+!Type:Oth A
+D02/03/2013
+T1
+^
+D02/03/2013
+T2
+^
+!Type:Oth L
+D02/03/2013
+T3
+^
+D02/03/2013
+T4
 ^
 !Type:Memorized
 KD
@@ -454,14 +459,16 @@ Nclass2
 ^
 !Account
 NAccount1
+TBank
 ^
 NAccount2
+TBank
 ^
 ";
 
         QifDocument actual = Read(qifSource, this.serializer.ReadDocument);
         QifDocument expected = CreateSampleDocument();
-        Assert.Equal<BankTransaction>(expected.BankTransactions, actual.BankTransactions);
+        Assert.Equal<Transaction>(expected.Transactions, actual.Transactions);
     }
 
     [Fact]
@@ -494,33 +501,65 @@ NAccount2
     public void Write_Account()
     {
         this.AssertSerialized(
-            new Account("Account1"),
-            "NAccount1\n^\n",
+            new BankAccount(Account.Types.Bank, "Account1"),
+            "NAccount1\nTBank\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new Account("Account1") { Description = "desc", Type = "Z", CreditLimit = 5, StatementBalance = 6, StatementBalanceDate = Date },
+            new BankAccount("Z", "Account1") { Description = "desc", CreditLimit = 5, StatementBalance = 6, StatementBalanceDate = Date },
             "NAccount1\nTZ\nDdesc\nL5\n/02/03/2013\n$6\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new Account("Account1") { Description = "desc", Type = "Z", CreditLimit = 5, StatementBalance = 6, StatementBalanceDate = Date },
+            new BankAccount("Z", "Account1") { Description = "desc", CreditLimit = 5, StatementBalance = 6, StatementBalanceDate = Date },
             "NAccount1\nTZ\nDdesc\nL5\n/03/02/2013\n$6\n^\n",
             this.serializer.Write,
             "en-GB");
     }
 
     [Fact]
+    public void Write_BankAccount_WithTransactions()
+    {
+        this.AssertSerialized(
+            new BankAccount(Account.Types.Cash, "Account1")
+            {
+                Transactions =
+                {
+                    new(AccountType.Cash, Date, 15),
+                    new(AccountType.Cash, Date2, 16),
+                },
+            },
+            "NAccount1\nTCash\n^\n!Type:Cash\nD02/03/2013\nT15\n^\nD02/04/2013\nT16\n^\n",
+            (writer, account) => this.serializer.Write(writer, account, includeTransactions: true));
+    }
+
+    [Fact]
+    public void Write_InvestmentAccount_WithTransactions()
+    {
+        this.AssertSerialized(
+            new InvestmentAccount("Account1")
+            {
+                Transactions =
+                {
+                    new(Date),
+                    new(Date2),
+                },
+            },
+            "NAccount1\nTInvst\n^\n!Type:Invst\nD02/03/2013\n^\nD02/04/2013\n^\n",
+            (writer, account) => this.serializer.Write(writer, account, includeTransactions: true));
+    }
+
+    [Fact]
     public void Write_BankTransaction()
     {
         this.AssertSerialized(
-            new BankTransaction(Date, 35),
+            new BankTransaction(AccountType.Bank, Date, 35),
             "D02/03/2013\nT35\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new BankTransaction(Date, 35) { Address = ImmutableList.Create("addr", "city"), Category = "cat", ClearedStatus = ClearedState.Cleared, Memo = "memo", Number = "123", Payee = "payee" },
+            new BankTransaction(AccountType.Bank, Date, 35) { Address = ImmutableList.Create("addr", "city"), Category = "cat", ClearedStatus = ClearedState.Cleared, Memo = "memo", Number = "123", Payee = "payee" },
             "D02/03/2013\nT35\nN123\nMmemo\nLcat\nCC\nPpayee\nAaddr\nAcity\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new BankTransaction(Date, 35) { Splits = ImmutableList.Create<BankSplit>(new("cat1", "memo1") { Amount = 10 }, new("cat2", "memo2") { Percentage = 15 }) },
+            new BankTransaction(AccountType.Bank, Date, 35) { Splits = ImmutableList.Create<BankSplit>(new("cat1", "memo1") { Amount = 10 }, new("cat2", "memo2") { Percentage = 15 }) },
             "D02/03/2013\nT35\nScat1\nEmemo1\n$10\nScat2\nEmemo2\n%15\n^\n",
             this.serializer.Write);
     }
@@ -558,26 +597,12 @@ NAccount2
     [Fact]
     public void Write_Document()
     {
-        string qifSource = @"!Type:Bank
+        string expected = @"!Type:Bank
 D02/03/2013
 T9
 ^
 D02/03/2013
 T10
-^
-!Type:Oth A
-D02/03/2013
-T1
-^
-D02/03/2013
-T2
-^
-!Type:Oth L
-D02/03/2013
-T3
-^
-D02/03/2013
-T4
 ^
 !Type:Cash
 D02/03/2013
@@ -597,6 +622,20 @@ T8
 D02/03/2013
 ^
 D02/04/2013
+^
+!Type:Oth A
+D02/03/2013
+T1
+^
+D02/03/2013
+T2
+^
+!Type:Oth L
+D02/03/2013
+T3
+^
+D02/03/2013
+T4
 ^
 !Type:Memorized
 KD
@@ -619,14 +658,65 @@ Nclass2
 ^
 !Account
 NAccount1
+TBank
 ^
 NAccount2
+TBank
 ^
 ";
         this.AssertSerialized(
             CreateSampleDocument(),
-            qifSource,
+            expected,
             this.serializer.Write);
+    }
+
+    [Fact]
+    public void Write_Document_WithAccountAssociatedTransactions()
+    {
+        string expected = @"!Account
+NAccount1
+TCCard
+^
+!Type:CCard
+D02/03/2013
+T15
+^
+D02/04/2013
+T16
+^
+!Account
+NAccount2
+TInvst
+^
+!Type:Invst
+D02/03/2013
+^
+D02/04/2013
+^
+";
+        QifDocument document = new()
+        {
+            Accounts =
+            {
+                new BankAccount(Account.Types.CreditCard, "Account1")
+                {
+                    Transactions =
+                    {
+                        new BankTransaction(AccountType.CreditCard, Date, 15),
+                        new BankTransaction(AccountType.CreditCard, Date2, 16),
+                    },
+                },
+                new InvestmentAccount("Account2")
+                {
+                    Transactions =
+                    {
+                        new InvestmentTransaction(Date),
+                        new InvestmentTransaction(Date2),
+                    },
+                },
+            },
+        };
+        this.AssertSerialized(document, expected, this.serializer.Write);
     }
 
     private static QifDocument CreateSampleDocument()
@@ -635,43 +725,28 @@ NAccount2
         {
             Accounts =
             {
-                new Account("Account1"),
-                new Account("Account2"),
+                new BankAccount(Account.Types.Bank, "Account1"),
+                new BankAccount(Account.Types.Bank, "Account2"),
             },
-            AssetTransactions =
+            Transactions =
             {
-                new BankTransaction(Date, 1),
-                new BankTransaction(Date, 2),
-            },
-            LiabilityTransactions =
-            {
-                new BankTransaction(Date, 3),
-                new BankTransaction(Date, 4),
-            },
-            CashTransactions =
-            {
-                new BankTransaction(Date, 5),
-                new BankTransaction(Date, 6),
-            },
-            CreditCardTransactions =
-            {
-                new BankTransaction(Date, 7),
-                new BankTransaction(Date, 8),
-            },
-            BankTransactions =
-            {
-                new BankTransaction(Date, 9),
-                new BankTransaction(Date, 10),
+                new BankTransaction(AccountType.Bank, Date, 9),
+                new BankTransaction(AccountType.Bank, Date, 10),
+                new BankTransaction(AccountType.Cash, Date, 5),
+                new BankTransaction(AccountType.Cash, Date, 6),
+                new BankTransaction(AccountType.CreditCard, Date, 7),
+                new BankTransaction(AccountType.CreditCard, Date, 8),
+                new InvestmentTransaction(Date),
+                new InvestmentTransaction(Date2),
+                new BankTransaction(AccountType.Asset, Date, 1),
+                new BankTransaction(AccountType.Asset, Date, 2),
+                new BankTransaction(AccountType.Liability, Date, 3),
+                new BankTransaction(AccountType.Liability, Date, 4),
             },
             MemorizedTransactions =
             {
                 new MemorizedTransaction(MemorizedTransactionType.Deposit, Date, 10),
                 new MemorizedTransaction(MemorizedTransactionType.Deposit, Date2, 10),
-            },
-            InvestmentTransactions =
-            {
-                new InvestmentTransaction(Date),
-                new InvestmentTransaction(Date2),
             },
             Categories =
             {

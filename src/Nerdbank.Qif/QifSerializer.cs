@@ -19,23 +19,36 @@ public class QifSerializer
     /// <param name="value">The document to be serialized.</param>
     public virtual void Write(QifWriter writer, QifDocument value)
     {
-        WriteRecord("Type", "Bank", value.BankTransactions, this.Write);
-        WriteRecord("Type", "Oth A", value.AssetTransactions, this.Write);
-        WriteRecord("Type", "Oth L", value.LiabilityTransactions, this.Write);
-        WriteRecord("Type", "Cash", value.CashTransactions, this.Write);
-        WriteRecord("Type", "CCard", value.CreditCardTransactions, this.Write);
-        WriteRecord("Type", "Invst", value.InvestmentTransactions, this.Write);
-        WriteRecord("Type", "Memorized", value.MemorizedTransactions, this.Write);
+#pragma warning disable IDE0008 // Use explicit type
+        var transactionsByType = from tx in value.Transactions
+                                 group tx by tx.AccountType into txTypes
+                                 orderby txTypes.Key
+                                 select txTypes;
+        foreach (var txGroup in transactionsByType)
+#pragma warning restore IDE0008 // Use explicit type
+        {
+            WriteRecord("Type", GetAccountTypeString(txGroup.Key), txGroup, this.Write);
+        }
+
+        WriteRecord("Type", Account.Types.Memorized, value.MemorizedTransactions, this.Write);
         WriteRecord("Type", "Cat", value.Categories, this.Write);
         WriteRecord("Type", "Class", value.Classes, this.Write);
 
         // Finish with all account details at the end so that no transactions follow the last account
         // which would be misinterpreted by importers as associating all those transactions with that account.
-        WriteRecord("Account", null, value.Accounts, this.Write);
-
-        void WriteRecord<T>(string headerName, string? headerValue, IReadOnlyCollection<T> records, Action<QifWriter, T> recordWriter)
+        foreach (Account account in value.Accounts)
         {
-            if (records.Count > 0)
+            if (!QifUtilities.Equals("Account", writer.LastWrittenHeader.Name))
+            {
+                writer.WriteHeader("Account");
+            }
+
+            this.Write(writer, account, includeTransactions: true);
+        }
+
+        void WriteRecord<T>(string headerName, string? headerValue, IEnumerable<T> records, Action<QifWriter, T> recordWriter)
+        {
+            if (records.Any())
             {
                 writer.WriteHeader(headerName, headerValue);
                 foreach (T record in records)
@@ -70,44 +83,41 @@ public class QifSerializer
             {
                 if (QifUtilities.Equals("Type", reader.Header.Name))
                 {
-                    if (QifUtilities.Equals("Bank", reader.Header.Value))
+                    if (GetAccountTypeFromString(reader.Header.Value.Span) is AccountType accountType)
                     {
                         reader.MoveNext();
                         while (reader.Kind == QifToken.Field)
                         {
-                            result.BankTransactions.Add(this.ReadBankTransaction(reader) with { AccountName = lastAccountRead?.Name });
-                        }
-                    }
-                    else if (QifUtilities.Equals("Cash", reader.Header.Value))
-                    {
-                        reader.MoveNext();
-                        while (reader.Kind == QifToken.Field)
-                        {
-                            result.CashTransactions.Add(this.ReadBankTransaction(reader) with { AccountName = lastAccountRead?.Name });
-                        }
-                    }
-                    else if (QifUtilities.Equals("CCard", reader.Header.Value))
-                    {
-                        reader.MoveNext();
-                        while (reader.Kind == QifToken.Field)
-                        {
-                            result.CreditCardTransactions.Add(this.ReadBankTransaction(reader) with { AccountName = lastAccountRead?.Name });
-                        }
-                    }
-                    else if (QifUtilities.Equals("Oth A", reader.Header.Value))
-                    {
-                        reader.MoveNext();
-                        while (reader.Kind == QifToken.Field)
-                        {
-                            result.AssetTransactions.Add(this.ReadBankTransaction(reader) with { AccountName = lastAccountRead?.Name });
-                        }
-                    }
-                    else if (QifUtilities.Equals("Oth L", reader.Header.Value))
-                    {
-                        reader.MoveNext();
-                        while (reader.Kind == QifToken.Field)
-                        {
-                            result.LiabilityTransactions.Add(this.ReadBankTransaction(reader) with { AccountName = lastAccountRead?.Name });
+                            switch (accountType)
+                            {
+                                case AccountType.Investment:
+                                    InvestmentTransaction investmentTx = this.ReadInvestmentTransaction(reader);
+                                    if (lastAccountRead is InvestmentAccount investmentAccount)
+                                    {
+                                        investmentAccount.Transactions.Add(investmentTx);
+                                    }
+                                    else
+                                    {
+                                        result.Transactions.Add(investmentTx);
+                                    }
+
+                                    break;
+                                case AccountType.Memorized:
+                                    result.MemorizedTransactions.Add(this.ReadMemorizedTransaction(reader));
+                                    break;
+                                default:
+                                    BankTransaction bankTx = this.ReadBankTransaction(reader, accountType);
+                                    if (lastAccountRead is BankAccount bankAccount)
+                                    {
+                                        bankAccount.Transactions.Add(bankTx);
+                                    }
+                                    else
+                                    {
+                                        result.Transactions.Add(bankTx);
+                                    }
+
+                                    break;
+                            }
                         }
                     }
                     else if (QifUtilities.Equals("Cat", reader.Header.Value))
@@ -124,22 +134,6 @@ public class QifSerializer
                         while (reader.Kind == QifToken.Field)
                         {
                             result.Classes.Add(this.ReadClass(reader));
-                        }
-                    }
-                    else if (QifUtilities.Equals("Invst", reader.Header.Value))
-                    {
-                        reader.MoveNext();
-                        while (reader.Kind == QifToken.Field)
-                        {
-                            result.InvestmentTransactions.Add(this.ReadInvestmentTransaction(reader));
-                        }
-                    }
-                    else if (QifUtilities.Equals("Memorized", reader.Header.Value))
-                    {
-                        reader.MoveNext();
-                        while (reader.Kind == QifToken.Field)
-                        {
-                            result.MemorizedTransactions.Add(this.ReadMemorizedTransaction(reader));
                         }
                     }
                     else
@@ -224,11 +218,12 @@ public class QifSerializer
     /// Deserializes a <see cref="BankTransaction"/> from the given <see cref="QifReader"/>.
     /// </summary>
     /// <param name="reader">The reader to deserialize from.</param>
+    /// <param name="type">The type of the transaction being read.</param>
     /// <returns>The deserialized record.</returns>
     /// <devremarks>
     /// Keep this in close sync with <see cref="ReadMemorizedTransaction(QifReader)"/>.
     /// </devremarks>
-    public virtual BankTransaction ReadBankTransaction(QifReader reader)
+    public virtual BankTransaction ReadBankTransaction(QifReader reader, AccountType type)
     {
         DateTime? date = null;
         decimal? amount = null;
@@ -319,6 +314,7 @@ public class QifSerializer
         }
 
         return new(
+            type,
             ValueOrThrow(date, BankTransaction.FieldNames.Date),
             ValueOrThrow(amount, BankTransaction.FieldNames.Amount))
         {
@@ -362,7 +358,7 @@ public class QifSerializer
     /// <param name="reader">The reader to deserialize from.</param>
     /// <returns>The deserialized record.</returns>
     /// <devremarks>
-    /// Keep this in close sync with <see cref="ReadBankTransaction(QifReader)"/>.
+    /// Keep this in close sync with <see cref="ReadBankTransaction"/>.
     /// </devremarks>
     public virtual MemorizedTransaction ReadMemorizedTransaction(QifReader reader)
     {
@@ -629,14 +625,14 @@ public class QifSerializer
         ClearedState clearedStatus = ClearedState.None;
         string? memo = null;
         string? action = null;
-        decimal commission = 0;
-        decimal price = 0;
-        decimal quantity = 0;
+        decimal? commission = null;
+        decimal? price = null;
+        decimal? quantity = null;
         string? security = null;
         string? payee = null;
-        decimal transactionAmount = 0;
+        decimal? transactionAmount = null;
         string? accountForTransfer = null;
-        decimal amountTransferred = 0;
+        decimal? amountTransferred = null;
 
         foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
         {
@@ -707,8 +703,14 @@ public class QifSerializer
         };
     }
 
+    /// <inheritdoc cref="Write(QifWriter, Account, bool)" />
+    public virtual void Write(QifWriter writer, Account value) => this.Write(writer, value, includeTransactions: false);
+
     /// <inheritdoc cref="Write(QifWriter, Class)" />
-    public virtual void Write(QifWriter writer, Account value)
+    /// <param name="writer"><inheritdoc cref="Write(QifWriter, Class)" path="/param[@name='writer']"/></param>
+    /// <param name="value"><inheritdoc cref="Write(QifWriter, Class)" path="/param[@name='value']"/></param>
+    /// <param name="includeTransactions"><see langword="true" /> to include <see cref="Account.Transactions"/> in the serialized output; <see langword="false" /> otherwise.</param>
+    public virtual void Write(QifWriter writer, Account value, bool includeTransactions)
     {
         writer.WriteField(Account.FieldNames.Name, value.Name);
         writer.WriteField(Account.FieldNames.Type, value.Type);
@@ -717,6 +719,25 @@ public class QifSerializer
         writer.WriteField(Account.FieldNames.StatementBalanceDate, value.StatementBalanceDate);
         writer.WriteField(Account.FieldNames.StatementBalance, value.StatementBalance);
         writer.WriteEndOfRecord();
+
+        if (includeTransactions && value.Transactions.Count > 0)
+        {
+            writer.WriteHeader("Type", value.Type);
+            if (value is BankAccount bankAccount)
+            {
+                foreach (BankTransaction tx in bankAccount.Transactions)
+                {
+                    this.Write(writer, tx);
+                }
+            }
+            else if (value is InvestmentAccount investmentAccount)
+            {
+                foreach (InvestmentTransaction tx in investmentAccount.Transactions)
+                {
+                    this.Write(writer, tx);
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -761,14 +782,68 @@ public class QifSerializer
             }
         }
 
-        return new(ValueOrThrow(name, Account.FieldNames.Name))
+        Account result = type == Account.Types.Investment
+            ? new InvestmentAccount(ValueOrThrow(name, Account.FieldNames.Name))
+            : new BankAccount(ValueOrThrow(type, Account.FieldNames.Type), ValueOrThrow(name, Account.FieldNames.Name));
+
+        return result with
         {
-            Type = type,
             Description = description,
             CreditLimit = creditLimit,
             StatementBalanceDate = statementBalanceDate,
             StatementBalance = statementBalance,
         };
+    }
+
+    /// <inheritdoc cref="Write(QifWriter, Class)" />
+    public void Write(QifWriter writer, Transaction value)
+    {
+        if (value is BankTransaction bankTx)
+        {
+            this.Write(writer, bankTx);
+        }
+        else if (value is InvestmentTransaction investmentTx)
+        {
+            this.Write(writer, investmentTx);
+        }
+        else
+        {
+            throw new NotSupportedException();
+        }
+    }
+
+    internal static AccountType? GetAccountTypeFromString(ReadOnlySpan<char> type)
+    {
+        if (QifUtilities.Equals(Account.Types.Bank, type))
+        {
+            return AccountType.Bank;
+        }
+        else if (QifUtilities.Equals(Account.Types.Cash, type))
+        {
+            return AccountType.Cash;
+        }
+        else if (QifUtilities.Equals(Account.Types.CreditCard, type))
+        {
+            return AccountType.CreditCard;
+        }
+        else if (QifUtilities.Equals(Account.Types.Asset, type))
+        {
+            return AccountType.Asset;
+        }
+        else if (QifUtilities.Equals(Account.Types.Liability, type))
+        {
+            return AccountType.Liability;
+        }
+        else if (QifUtilities.Equals(Account.Types.Investment, type))
+        {
+            return AccountType.Investment;
+        }
+        else if (QifUtilities.Equals(Account.Types.Memorized, type))
+        {
+            return AccountType.Memorized;
+        }
+
+        return null;
     }
 
     private static void WriteBankTransactionHelper(QifWriter writer, BankTransaction value)
@@ -792,5 +867,20 @@ public class QifSerializer
             writer.WriteField(BankTransaction.FieldNames.SplitAmount, split.Amount);
             writer.WriteField(BankTransaction.FieldNames.SplitPercent, split.Percentage);
         }
+    }
+
+    private static string GetAccountTypeString(AccountType type)
+    {
+        return type switch
+        {
+            AccountType.Bank => Account.Types.Bank,
+            AccountType.CreditCard => Account.Types.CreditCard,
+            AccountType.Liability => Account.Types.Liability,
+            AccountType.Asset => Account.Types.Asset,
+            AccountType.Cash => Account.Types.Cash,
+            AccountType.Memorized => Account.Types.Memorized,
+            AccountType.Investment => Account.Types.Investment,
+            _ => throw new ArgumentException(),
+        };
     }
 }

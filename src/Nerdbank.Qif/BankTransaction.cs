@@ -6,34 +6,15 @@ namespace Nerdbank.Qif;
 /// <summary>
 /// A bank transaction.
 /// </summary>
+/// <param name="AccountType">The type of account this transaction is found within, or the type of this transaction.</param>
 /// <param name="Date">The date of the transaction.</param>
 /// <param name="Amount">The amount of the transaction.</param>
-public partial record BankTransaction(DateTime Date, decimal Amount)
+public partial record BankTransaction(AccountType AccountType, DateTime Date, decimal Amount) : Transaction(AccountType, Date)
 {
-    /// <summary>
-    /// The QIF header that introduces <see cref="BankTransaction"/> records.
-    /// </summary>
-    public static readonly (string Name, string Value) Header = ("Type", "Bank");
-
-    /// <summary>
-    /// Gets the cleared or reconciled state of the transaction.
-    /// </summary>
-    public ClearedState ClearedStatus { get; init; }
-
     /// <summary>
     /// Gets the check number. Can also be "Deposit", "Transfer", "Print", "ATM", "EFT".
     /// </summary>
     public string? Number { get; init; }
-
-    /// <summary>
-    /// Gets the transaction payee.
-    /// </summary>
-    public string? Payee { get; init; }
-
-    /// <summary>
-    /// Gets the transaction memo.
-    /// </summary>
-    public string? Memo { get; init; }
 
     /// <summary>
     /// Gets the category assigned to the transaction.
@@ -53,11 +34,6 @@ public partial record BankTransaction(DateTime Date, decimal Amount)
     /// </summary>
     public ImmutableList<BankSplit> Splits { get; init; } = ImmutableList<BankSplit>.Empty;
 
-    /// <summary>
-    /// Gets the name of the account these transactions belong to, if known.
-    /// </summary>
-    public string? AccountName { get; init; }
-
     /// <inheritdoc/>
     public virtual bool Equals(BankTransaction? other)
     {
@@ -72,8 +48,7 @@ public partial record BankTransaction(DateTime Date, decimal Amount)
             && EqualityComparer<string?>.Default.Equals(this.Memo, other!.Memo)
             && EqualityComparer<string?>.Default.Equals(this.Category, other!.Category)
             && ByValueCollectionComparer<string>.Default.Equals(this.Address, other!.Address)
-            && ByValueCollectionComparer<BankSplit>.Default.Equals(this.Splits, other!.Splits)
-            && EqualityComparer<string?>.Default.Equals(this.AccountName, other!.AccountName));
+            && ByValueCollectionComparer<BankSplit>.Default.Equals(this.Splits, other!.Splits));
     }
 
     /// <inheritdoc/>
@@ -90,7 +65,6 @@ public partial record BankTransaction(DateTime Date, decimal Amount)
         hash.Add(this.Category);
         hash.Add(this.Address, ByValueCollectionComparer<string>.Default);
         hash.Add(this.Splits, ByValueCollectionComparer<BankSplit>.Default);
-        hash.Add(this.AccountName);
         return hash.ToHashCode();
     }
 

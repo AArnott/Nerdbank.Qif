@@ -12,8 +12,18 @@ internal class ByValueCollectionComparer<T> : IEqualityComparer<IReadOnlyList<T>
     {
     }
 
-    public bool Equals(IReadOnlyList<T> x, IReadOnlyList<T> y)
+    public bool Equals(IReadOnlyList<T>? x, IReadOnlyList<T>? y)
     {
+        if (x is null && y is null)
+        {
+            return true;
+        }
+
+        if (x is null || y is null)
+        {
+            return false;
+        }
+
         if (x.Count != y.Count)
         {
             return false;

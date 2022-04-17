@@ -7,7 +7,7 @@ namespace Nerdbank.Qif;
 /// An investment transaction.
 /// </summary>
 /// <param name="Date">The date of the transaction.</param>
-public record InvestmentTransaction(DateTime Date)
+public record InvestmentTransaction(DateTime Date) : Transaction(AccountType.Investment, Date)
 {
     /// <summary>
     /// Gets the action.
@@ -33,21 +33,6 @@ public record InvestmentTransaction(DateTime Date)
     /// Gets the transaction amount.
     /// </summary>
     public decimal? TransactionAmount { get; init; }
-
-    /// <summary>
-    /// Gets the cleared status.
-    /// </summary>
-    public ClearedState ClearedStatus { get; init; }
-
-    /// <summary>
-    /// Gets the payee, or a description for deposits, transfers, etc.
-    /// </summary>
-    public string? Payee { get; init; }
-
-    /// <summary>
-    /// Gets the memo.
-    /// </summary>
-    public string? Memo { get; init; }
 
     /// <summary>
     /// Gets the commission.

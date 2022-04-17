@@ -4,35 +4,89 @@
 namespace Nerdbank.Qif;
 
 /// <summary>
-/// An account.
+/// The base type for an account.
 /// </summary>
 /// <param name="Name">The name of the account.</param>
-public record Account(string Name)
+/// <remarks>
+/// Supported derived types are <see cref="BankAccount"/> and <see cref="InvestmentAccount"/>.
+/// </remarks>
+public abstract record Account(string Name)
 {
     /// <summary>
-    /// Gets or sets the type.
+    /// Gets the description.
     /// </summary>
-    public string? Type { get; set; }
+    public string? Description { get; init; }
 
     /// <summary>
-    /// Gets or sets the description.
+    /// Gets the credit limit.
     /// </summary>
-    public string? Description { get; set; }
+    public decimal? CreditLimit { get; init; }
 
     /// <summary>
-    /// Gets or sets the credit limit.
+    /// Gets the statement balance date.
     /// </summary>
-    public decimal? CreditLimit { get; set; }
+    public DateTime? StatementBalanceDate { get; init; }
 
     /// <summary>
-    /// Gets or sets the statement balance date.
+    /// Gets the statement balance.
     /// </summary>
-    public DateTime? StatementBalanceDate { get; set; }
+    public decimal? StatementBalance { get; init; }
 
     /// <summary>
-    /// Gets or sets the statement balance.
+    /// Gets the account type, as a string.
     /// </summary>
-    public decimal? StatementBalance { get; set; }
+    public abstract string Type { get; init; }
+
+    /// <summary>
+    /// Gets the account type.
+    /// </summary>
+    public abstract AccountType? AccountType { get; }
+
+    /// <summary>
+    /// Gets the list of transactions in this account.
+    /// </summary>
+    public abstract IReadOnlyList<Transaction> Transactions { get; }
+
+    /// <summary>
+    /// Well-known values for the <see cref="Type"/> property.
+    /// </summary>
+    public static class Types
+    {
+        /// <summary>
+        /// A typical bank account.
+        /// </summary>
+        public const string Bank = "Bank";
+
+        /// <summary>
+        /// An asset account, such as a house or other expensive property.
+        /// </summary>
+        public const string Asset = "Oth A";
+
+        /// <summary>
+        /// A liability account, such as a loan.
+        /// </summary>
+        public const string Liability = "Oth L";
+
+        /// <summary>
+        /// A cash account.
+        /// </summary>
+        public const string Cash = "Cash";
+
+        /// <summary>
+        /// A credit card account.
+        /// </summary>
+        public const string CreditCard = "CCard";
+
+        /// <summary>
+        /// An investment account.
+        /// </summary>
+        public const string Investment = "Invst";
+
+        /// <summary>
+        /// A container for memorized transactions.
+        /// </summary>
+        public const string Memorized = "Memorized";
+    }
 
     internal static class FieldNames
     {
