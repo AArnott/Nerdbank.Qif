@@ -454,8 +454,10 @@ Nclass2
 ^
 !Account
 NAccount1
+TBank
 ^
 NAccount2
+TBank
 ^
 ";
 
@@ -494,15 +496,15 @@ NAccount2
     public void Write_Account()
     {
         this.AssertSerialized(
-            new Account("Account1"),
-            "NAccount1\n^\n",
+            new BankAccount(Account.Types.Bank, "Account1"),
+            "NAccount1\nTBank\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new Account("Account1") { Description = "desc", Type = "Z", CreditLimit = 5, StatementBalance = 6, StatementBalanceDate = Date },
+            new BankAccount("Z", "Account1") { Description = "desc", CreditLimit = 5, StatementBalance = 6, StatementBalanceDate = Date },
             "NAccount1\nTZ\nDdesc\nL5\n/02/03/2013\n$6\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new Account("Account1") { Description = "desc", Type = "Z", CreditLimit = 5, StatementBalance = 6, StatementBalanceDate = Date },
+            new BankAccount("Z", "Account1") { Description = "desc", CreditLimit = 5, StatementBalance = 6, StatementBalanceDate = Date },
             "NAccount1\nTZ\nDdesc\nL5\n/03/02/2013\n$6\n^\n",
             this.serializer.Write,
             "en-GB");
@@ -619,8 +621,10 @@ Nclass2
 ^
 !Account
 NAccount1
+TBank
 ^
 NAccount2
+TBank
 ^
 ";
         this.AssertSerialized(
@@ -635,8 +639,8 @@ NAccount2
         {
             Accounts =
             {
-                new Account("Account1"),
-                new Account("Account2"),
+                new BankAccount(Account.Types.Bank, "Account1"),
+                new BankAccount(Account.Types.Bank, "Account2"),
             },
             Transactions =
             {

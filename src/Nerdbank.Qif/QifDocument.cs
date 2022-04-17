@@ -11,13 +11,21 @@ namespace Nerdbank.Qif;
 public class QifDocument
 {
     /// <summary>
-    /// Gets the collection of transactions.
+    /// Gets the collection of transactions that do not belong to an account.
     /// </summary>
+    /// <remarks>
+    /// For transactions for which an account is known, search <see cref="Accounts"/> and use
+    /// the <see cref="BankAccount.Transactions"/> collection.
+    /// </remarks>
     public List<BankTransaction> Transactions { get; } = new();
 
     /// <summary>
-    /// Gets a collection of investment transactions.
+    /// Gets a collection of investment transactions that do not belong to an account.
     /// </summary>
+    /// <remarks>
+    /// For transactions for which an account is known, search <see cref="Accounts"/> and use
+    /// the <see cref="InvestmentAccount.Transactions"/> collection.
+    /// </remarks>
     public List<InvestmentTransaction> InvestmentTransactions { get; } = new();
 
     /// <summary>

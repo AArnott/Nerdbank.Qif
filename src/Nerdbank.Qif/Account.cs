@@ -4,36 +4,43 @@
 namespace Nerdbank.Qif;
 
 /// <summary>
-/// An account.
+/// The base type for an account.
 /// </summary>
 /// <param name="Name">The name of the account.</param>
-public record Account(string Name)
+/// <remarks>
+/// Supported derived types are <see cref="BankAccount"/> and <see cref="InvestmentAccount"/>.
+/// </remarks>
+public abstract record Account(string Name)
 {
     /// <summary>
-    /// Gets or sets the type.
+    /// Gets the description.
     /// </summary>
-    /// <value>Typically one of the values found in the <see cref="Types"/> class.</value>
-    public string? Type { get; set; }
+    public string? Description { get; init; }
 
     /// <summary>
-    /// Gets or sets the description.
+    /// Gets the credit limit.
     /// </summary>
-    public string? Description { get; set; }
+    public decimal? CreditLimit { get; init; }
 
     /// <summary>
-    /// Gets or sets the credit limit.
+    /// Gets the statement balance date.
     /// </summary>
-    public decimal? CreditLimit { get; set; }
+    public DateTime? StatementBalanceDate { get; init; }
 
     /// <summary>
-    /// Gets or sets the statement balance date.
+    /// Gets the statement balance.
     /// </summary>
-    public DateTime? StatementBalanceDate { get; set; }
+    public decimal? StatementBalance { get; init; }
 
     /// <summary>
-    /// Gets or sets the statement balance.
+    /// Gets the account type, as a string.
     /// </summary>
-    public decimal? StatementBalance { get; set; }
+    public abstract string Type { get; init; }
+
+    /// <summary>
+    /// Gets the account type.
+    /// </summary>
+    public abstract AccountType? AccountType { get; }
 
     /// <summary>
     /// Well-known values for the <see cref="Type"/> property.

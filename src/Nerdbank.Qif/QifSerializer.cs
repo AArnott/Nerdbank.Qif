@@ -732,14 +732,51 @@ public class QifSerializer
             }
         }
 
-        return new(ValueOrThrow(name, Account.FieldNames.Name))
+        Account result = type == Account.Types.Investment
+            ? new InvestmentAccount(ValueOrThrow(name, Account.FieldNames.Name))
+            : new BankAccount(ValueOrThrow(type, Account.FieldNames.Type), ValueOrThrow(name, Account.FieldNames.Name));
+
+        return result with
         {
-            Type = type,
             Description = description,
             CreditLimit = creditLimit,
             StatementBalanceDate = statementBalanceDate,
             StatementBalance = statementBalance,
         };
+    }
+
+    internal static AccountType? GetAccountTypeFromString(ReadOnlySpan<char> type)
+    {
+        if (QifUtilities.Equals(Account.Types.Bank, type))
+        {
+            return AccountType.Bank;
+        }
+        else if (QifUtilities.Equals(Account.Types.Cash, type))
+        {
+            return AccountType.Cash;
+        }
+        else if (QifUtilities.Equals(Account.Types.CreditCard, type))
+        {
+            return AccountType.CreditCard;
+        }
+        else if (QifUtilities.Equals(Account.Types.Asset, type))
+        {
+            return AccountType.Asset;
+        }
+        else if (QifUtilities.Equals(Account.Types.Liability, type))
+        {
+            return AccountType.Liability;
+        }
+        else if (QifUtilities.Equals(Account.Types.Investment, type))
+        {
+            return AccountType.Investment;
+        }
+        else if (QifUtilities.Equals(Account.Types.Memorized, type))
+        {
+            return AccountType.Memorized;
+        }
+
+        return null;
     }
 
     private static void WriteBankTransactionHelper(QifWriter writer, BankTransaction value)
@@ -778,39 +815,5 @@ public class QifSerializer
             AccountType.Investment => Account.Types.Investment,
             _ => throw new ArgumentException(),
         };
-    }
-
-    private static AccountType? GetAccountTypeFromString(ReadOnlySpan<char> type)
-    {
-        if (QifUtilities.Equals(Account.Types.Bank, type))
-        {
-            return AccountType.Bank;
-        }
-        else if (QifUtilities.Equals(Account.Types.Cash, type))
-        {
-            return AccountType.Cash;
-        }
-        else if (QifUtilities.Equals(Account.Types.CreditCard, type))
-        {
-            return AccountType.CreditCard;
-        }
-        else if (QifUtilities.Equals(Account.Types.Asset, type))
-        {
-            return AccountType.Asset;
-        }
-        else if (QifUtilities.Equals(Account.Types.Liability, type))
-        {
-            return AccountType.Liability;
-        }
-        else if (QifUtilities.Equals(Account.Types.Investment, type))
-        {
-            return AccountType.Investment;
-        }
-        else if (QifUtilities.Equals(Account.Types.Memorized, type))
-        {
-            return AccountType.Memorized;
-        }
-
-        return null;
     }
 }
