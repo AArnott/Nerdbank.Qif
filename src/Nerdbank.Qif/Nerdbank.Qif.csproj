@@ -3,7 +3,7 @@
     <TargetFrameworks>netstandard2.1</TargetFrameworks>
     <Description>Quicken Interchange Format (QIF) I/O library</Description>
     <Copyright>Copyright © 2022</Copyright>
-    <Authors>Shane Walters, John Mollman, Andrew Arnott</Authors>
+    <Authors>Andrew Arnott</Authors>
     <PackageTags>qif quicken</PackageTags>
   </PropertyGroup>
   <ItemGroup>

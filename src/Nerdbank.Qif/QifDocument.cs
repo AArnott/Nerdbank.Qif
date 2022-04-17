@@ -11,54 +11,34 @@ namespace Nerdbank.Qif;
 public class QifDocument
 {
     /// <summary>
-    /// Gets a collection of bank transactions.
+    /// Gets the collection of transactions.
     /// </summary>
-    public List<BankTransaction> BankTransactions { get; private set; } = new();
-
-    /// <summary>
-    /// Gets a collection of cash transactions.
-    /// </summary>
-    public List<BankTransaction> CashTransactions { get; private set; } = new();
-
-    /// <summary>
-    /// Gets a collection of credit card transactions.
-    /// </summary>
-    public List<BankTransaction> CreditCardTransactions { get; private set; } = new();
-
-    /// <summary>
-    /// Gets a collection of asset transactions.
-    /// </summary>
-    public List<BankTransaction> AssetTransactions { get; private set; } = new();
-
-    /// <summary>
-    /// Gets a collection of liability transactions.
-    /// </summary>
-    public List<BankTransaction> LiabilityTransactions { get; private set; } = new();
+    public List<BankTransaction> Transactions { get; } = new();
 
     /// <summary>
     /// Gets a collection of investment transactions.
     /// </summary>
-    public List<InvestmentTransaction> InvestmentTransactions { get; private set; } = new();
-
-    /// <summary>
-    /// Gets a collection of account list transactions.
-    /// </summary>
-    public List<Account> Accounts { get; private set; } = new();
-
-    /// <summary>
-    /// Gets a collection of category list transactions.
-    /// </summary>
-    public List<Category> Categories { get; private set; } = new();
-
-    /// <summary>
-    /// Gets a collection of class list transactions.
-    /// </summary>
-    public List<Class> Classes { get; private set; } = new();
+    public List<InvestmentTransaction> InvestmentTransactions { get; } = new();
 
     /// <summary>
     /// Gets a collection of memorized transaction list transactions.
     /// </summary>
-    public List<MemorizedTransaction> MemorizedTransactions { get; private set; } = new();
+    public List<MemorizedTransaction> MemorizedTransactions { get; } = new();
+
+    /// <summary>
+    /// Gets a collection of account list transactions.
+    /// </summary>
+    public List<Account> Accounts { get; } = new();
+
+    /// <summary>
+    /// Gets a collection of category list transactions.
+    /// </summary>
+    public List<Category> Categories { get; } = new();
+
+    /// <summary>
+    /// Gets a collection of class list transactions.
+    /// </summary>
+    public List<Class> Classes { get; } = new();
 
     /// <summary>
     /// Imports a QIF file and returns a QifDom object.

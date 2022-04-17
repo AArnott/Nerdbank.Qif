@@ -12,6 +12,7 @@ public record Account(string Name)
     /// <summary>
     /// Gets or sets the type.
     /// </summary>
+    /// <value>Typically one of the values found in the <see cref="Types"/> class.</value>
     public string? Type { get; set; }
 
     /// <summary>
@@ -33,6 +34,47 @@ public record Account(string Name)
     /// Gets or sets the statement balance.
     /// </summary>
     public decimal? StatementBalance { get; set; }
+
+    /// <summary>
+    /// Well-known values for the <see cref="Type"/> property.
+    /// </summary>
+    public static class Types
+    {
+        /// <summary>
+        /// A typical bank account.
+        /// </summary>
+        public const string Bank = "Bank";
+
+        /// <summary>
+        /// An asset account, such as a house or other expensive property.
+        /// </summary>
+        public const string Asset = "Oth A";
+
+        /// <summary>
+        /// A liability account, such as a loan.
+        /// </summary>
+        public const string Liability = "Oth L";
+
+        /// <summary>
+        /// A cash account.
+        /// </summary>
+        public const string Cash = "Cash";
+
+        /// <summary>
+        /// A credit card account.
+        /// </summary>
+        public const string CreditCard = "CCard";
+
+        /// <summary>
+        /// An investment account.
+        /// </summary>
+        public const string Investment = "Invst";
+
+        /// <summary>
+        /// A container for memorized transactions.
+        /// </summary>
+        public const string Memorized = "Memorized";
+    }
 
     internal static class FieldNames
     {

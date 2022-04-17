@@ -14,7 +14,7 @@ public class ImportTests : TestBase
     public void Can_import_sample_qif_when_current_culture_is_en_US()
     {
         QifDocument qif = Load("en-US");
-        Assert.NotEmpty(qif.BankTransactions);
+        Assert.NotEmpty(qif.Transactions);
     }
 
     [Fact]
@@ -27,7 +27,7 @@ public class ImportTests : TestBase
     public void Can_import_sample_qif_when_current_culture_is_en_CA_with_CustomReadDateFormat()
     {
         QifDocument qif = Load("en-CA");
-        Assert.NotEmpty(qif.BankTransactions);
+        Assert.NotEmpty(qif.Transactions);
     }
 
     [Fact]

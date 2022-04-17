@@ -9,7 +9,7 @@ namespace Nerdbank.Qif;
 /// <param name="Type">The type of memorized transaction.</param>
 /// <param name="Date">The date of the transaction.</param>
 /// <param name="Amount">The amount of the transaction.</param>
-public record MemorizedTransaction(MemorizedTransactionType Type, DateTime Date, decimal Amount) : BankTransaction(Date, Amount)
+public record MemorizedTransaction(MemorizedTransactionType Type, DateTime Date, decimal Amount) : BankTransaction(AccountType.Memorized, Date, Amount)
 {
     /// <summary>
     /// Gets or sets the amortization current loan balance.

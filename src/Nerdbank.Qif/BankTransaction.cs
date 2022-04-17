@@ -6,9 +6,10 @@ namespace Nerdbank.Qif;
 /// <summary>
 /// A bank transaction.
 /// </summary>
+/// <param name="AccountType">The type of account this transaction is found within, or the type of this transaction.</param>
 /// <param name="Date">The date of the transaction.</param>
 /// <param name="Amount">The amount of the transaction.</param>
-public partial record BankTransaction(DateTime Date, decimal Amount)
+public partial record BankTransaction(AccountType AccountType, DateTime Date, decimal Amount)
 {
     /// <summary>
     /// The QIF header that introduces <see cref="BankTransaction"/> records.

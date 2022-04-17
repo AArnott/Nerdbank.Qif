@@ -28,7 +28,7 @@ PPaycheck
 LIncome.Salary
 ^
 ";
-        BankTransaction transaction = Read(qifSource, this.serializer.ReadBankTransaction);
+        BankTransaction transaction = Read(qifSource, r => this.serializer.ReadBankTransaction(r, AccountType.Bank));
         Assert.Equal(Date, transaction.Date);
         Assert.Equal(1500, transaction.Amount);
         Assert.Equal("123", transaction.Number);
@@ -46,7 +46,7 @@ PPaycheck
 LIncome.Salary
 ^
 ";
-        BankTransaction transaction = Read(qifSource, this.serializer.ReadBankTransaction, "en-GB");
+        BankTransaction transaction = Read(qifSource, r => this.serializer.ReadBankTransaction(r, AccountType.Bank), "en-GB");
         Assert.Equal(new DateTime(2013, 3, 2), transaction.Date);
         Assert.Equal(1500, transaction.Amount);
         Assert.Equal("123", transaction.Number);
@@ -78,7 +78,7 @@ ESplit3Memo
 $500
 ^
 ";
-        BankTransaction transaction = Read(qifSource, this.serializer.ReadBankTransaction);
+        BankTransaction transaction = Read(qifSource, r => this.serializer.ReadBankTransaction(r, AccountType.Bank));
         Assert.Equal(1500, transaction.Amount);
         Assert.Equal("123", transaction.Number);
         Assert.Equal(ClearedState.Cleared, transaction.ClearedStatus);
@@ -107,7 +107,7 @@ ZNotta # unrecognized field that should be skipped over
 LIncome.Salary
 ^
 ";
-        BankTransaction transaction = Read(qifSource, this.serializer.ReadBankTransaction);
+        BankTransaction transaction = Read(qifSource, r => this.serializer.ReadBankTransaction(r, AccountType.Bank));
         Assert.Equal("Paycheck", transaction.Payee);
         Assert.Equal("Income.Salary", transaction.Category);
     }
@@ -135,8 +135,8 @@ LRent
 ^";
         QifDocument document = Read(qifSource, this.serializer.ReadDocument);
         Assert.Single(document.Accounts);
-        Assert.Single(document.BankTransactions);
-        Assert.Equal("Bank Account 1", document.BankTransactions[0].AccountName);
+        Assert.Single(document.Transactions);
+        Assert.Equal("Bank Account 1", document.Transactions[0].AccountName);
     }
 
     [Fact]
@@ -400,20 +400,6 @@ T9
 D02/03/2013
 T10
 ^
-!Type:Oth A
-D02/03/2013
-T1
-^
-D02/03/2013
-T2
-^
-!Type:Oth L
-D02/03/2013
-T3
-^
-D02/03/2013
-T4
-^
 !Type:Cash
 D02/03/2013
 T5
@@ -427,6 +413,20 @@ T7
 ^
 D02/03/2013
 T8
+^
+!Type:Oth A
+D02/03/2013
+T1
+^
+D02/03/2013
+T2
+^
+!Type:Oth L
+D02/03/2013
+T3
+^
+D02/03/2013
+T4
 ^
 !Type:Invst
 D02/03/2013
@@ -461,7 +461,7 @@ NAccount2
 
         QifDocument actual = Read(qifSource, this.serializer.ReadDocument);
         QifDocument expected = CreateSampleDocument();
-        Assert.Equal<BankTransaction>(expected.BankTransactions, actual.BankTransactions);
+        Assert.Equal<BankTransaction>(expected.Transactions, actual.Transactions);
     }
 
     [Fact]
@@ -512,15 +512,15 @@ NAccount2
     public void Write_BankTransaction()
     {
         this.AssertSerialized(
-            new BankTransaction(Date, 35),
+            new BankTransaction(AccountType.Bank, Date, 35),
             "D02/03/2013\nT35\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new BankTransaction(Date, 35) { Address = ImmutableList.Create("addr", "city"), Category = "cat", ClearedStatus = ClearedState.Cleared, Memo = "memo", Number = "123", Payee = "payee" },
+            new BankTransaction(AccountType.Bank, Date, 35) { Address = ImmutableList.Create("addr", "city"), Category = "cat", ClearedStatus = ClearedState.Cleared, Memo = "memo", Number = "123", Payee = "payee" },
             "D02/03/2013\nT35\nN123\nMmemo\nLcat\nCC\nPpayee\nAaddr\nAcity\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new BankTransaction(Date, 35) { Splits = ImmutableList.Create<BankSplit>(new("cat1", "memo1") { Amount = 10 }, new("cat2", "memo2") { Percentage = 15 }) },
+            new BankTransaction(AccountType.Bank, Date, 35) { Splits = ImmutableList.Create<BankSplit>(new("cat1", "memo1") { Amount = 10 }, new("cat2", "memo2") { Percentage = 15 }) },
             "D02/03/2013\nT35\nScat1\nEmemo1\n$10\nScat2\nEmemo2\n%15\n^\n",
             this.serializer.Write);
     }
@@ -558,26 +558,12 @@ NAccount2
     [Fact]
     public void Write_Document()
     {
-        string qifSource = @"!Type:Bank
+        string expected = @"!Type:Bank
 D02/03/2013
 T9
 ^
 D02/03/2013
 T10
-^
-!Type:Oth A
-D02/03/2013
-T1
-^
-D02/03/2013
-T2
-^
-!Type:Oth L
-D02/03/2013
-T3
-^
-D02/03/2013
-T4
 ^
 !Type:Cash
 D02/03/2013
@@ -592,6 +578,20 @@ T7
 ^
 D02/03/2013
 T8
+^
+!Type:Oth A
+D02/03/2013
+T1
+^
+D02/03/2013
+T2
+^
+!Type:Oth L
+D02/03/2013
+T3
+^
+D02/03/2013
+T4
 ^
 !Type:Invst
 D02/03/2013
@@ -625,7 +625,7 @@ NAccount2
 ";
         this.AssertSerialized(
             CreateSampleDocument(),
-            qifSource,
+            expected,
             this.serializer.Write);
     }
 
@@ -638,30 +638,18 @@ NAccount2
                 new Account("Account1"),
                 new Account("Account2"),
             },
-            AssetTransactions =
+            Transactions =
             {
-                new BankTransaction(Date, 1),
-                new BankTransaction(Date, 2),
-            },
-            LiabilityTransactions =
-            {
-                new BankTransaction(Date, 3),
-                new BankTransaction(Date, 4),
-            },
-            CashTransactions =
-            {
-                new BankTransaction(Date, 5),
-                new BankTransaction(Date, 6),
-            },
-            CreditCardTransactions =
-            {
-                new BankTransaction(Date, 7),
-                new BankTransaction(Date, 8),
-            },
-            BankTransactions =
-            {
-                new BankTransaction(Date, 9),
-                new BankTransaction(Date, 10),
+                new BankTransaction(AccountType.Bank, Date, 9),
+                new BankTransaction(AccountType.Bank, Date, 10),
+                new BankTransaction(AccountType.Cash, Date, 5),
+                new BankTransaction(AccountType.Cash, Date, 6),
+                new BankTransaction(AccountType.CreditCard, Date, 7),
+                new BankTransaction(AccountType.CreditCard, Date, 8),
+                new BankTransaction(AccountType.Asset, Date, 1),
+                new BankTransaction(AccountType.Asset, Date, 2),
+                new BankTransaction(AccountType.Liability, Date, 3),
+                new BankTransaction(AccountType.Liability, Date, 4),
             },
             MemorizedTransactions =
             {
