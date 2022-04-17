@@ -37,7 +37,15 @@ public class QifSerializer
 
         // Finish with all account details at the end so that no transactions follow the last account
         // which would be misinterpreted by importers as associating all those transactions with that account.
-        WriteRecord("Account", null, value.Accounts, this.Write);
+        foreach (Account account in value.Accounts)
+        {
+            if (!QifUtilities.Equals("Account", writer.LastWrittenHeader.Name))
+            {
+                writer.WriteHeader("Account");
+            }
+
+            this.Write(writer, account, includeTransactions: true);
+        }
 
         void WriteRecord<T>(string headerName, string? headerValue, IEnumerable<T> records, Action<QifWriter, T> recordWriter)
         {
@@ -84,13 +92,17 @@ public class QifSerializer
                             switch (accountType)
                             {
                                 case AccountType.Investment:
-                                    result.InvestmentTransactions.Add(this.ReadInvestmentTransaction(reader));
+                                    InvestmentTransaction investmentTx = this.ReadInvestmentTransaction(reader);
+                                    List<InvestmentTransaction> investmentTxs = (lastAccountRead as InvestmentAccount)?.Transactions ?? result.InvestmentTransactions;
+                                    investmentTxs.Add(investmentTx);
                                     break;
                                 case AccountType.Memorized:
                                     result.MemorizedTransactions.Add(this.ReadMemorizedTransaction(reader));
                                     break;
                                 default:
-                                    result.Transactions.Add(this.ReadBankTransaction(reader, accountType) with { AccountName = lastAccountRead?.Name });
+                                    BankTransaction bankTx = this.ReadBankTransaction(reader, accountType);
+                                    List<BankTransaction> bankTxs = (lastAccountRead as BankAccount)?.Transactions ?? result.Transactions;
+                                    bankTxs.Add(bankTx);
                                     break;
                             }
                         }
@@ -678,8 +690,14 @@ public class QifSerializer
         };
     }
 
+    /// <inheritdoc cref="Write(QifWriter, Account, bool)" />
+    public virtual void Write(QifWriter writer, Account value) => this.Write(writer, value, includeTransactions: false);
+
     /// <inheritdoc cref="Write(QifWriter, Class)" />
-    public virtual void Write(QifWriter writer, Account value)
+    /// <param name="writer"><inheritdoc cref="Write(QifWriter, Class)" path="/param[@name='writer']"/></param>
+    /// <param name="value"><inheritdoc cref="Write(QifWriter, Class)" path="/param[@name='value']"/></param>
+    /// <param name="includeTransactions"><see langword="true" /> to include <see cref="Account.Transactions"/> in the serialized output; <see langword="false" /> otherwise.</param>
+    public virtual void Write(QifWriter writer, Account value, bool includeTransactions)
     {
         writer.WriteField(Account.FieldNames.Name, value.Name);
         writer.WriteField(Account.FieldNames.Type, value.Type);
@@ -688,6 +706,25 @@ public class QifSerializer
         writer.WriteField(Account.FieldNames.StatementBalanceDate, value.StatementBalanceDate);
         writer.WriteField(Account.FieldNames.StatementBalance, value.StatementBalance);
         writer.WriteEndOfRecord();
+
+        if (includeTransactions && value.Transactions.Count > 0)
+        {
+            writer.WriteHeader("Type", value.Type);
+            if (value is BankAccount bankAccount)
+            {
+                foreach (BankTransaction tx in bankAccount.Transactions)
+                {
+                    this.Write(writer, tx);
+                }
+            }
+            else if (value is InvestmentAccount investmentAccount)
+            {
+                foreach (InvestmentTransaction tx in investmentAccount.Transactions)
+                {
+                    this.Write(writer, tx);
+                }
+            }
+        }
     }
 
     /// <summary>

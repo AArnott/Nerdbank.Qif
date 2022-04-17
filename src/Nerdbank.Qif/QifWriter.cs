@@ -27,6 +27,11 @@ public class QifWriter
     public IFormatProvider FormatProvider { get; set; } = CultureInfo.CurrentCulture;
 
     /// <summary>
+    /// Gets the last header written.
+    /// </summary>
+    public (ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) LastWrittenHeader { get; private set; }
+
+    /// <summary>
     /// Emits a header such as <c>!Type:Bank</c>.
     /// </summary>
     /// <param name="name">The header name (e.g. "Type").</param>
@@ -42,6 +47,7 @@ public class QifWriter
         }
 
         this.writer.WriteLine();
+        this.LastWrittenHeader = (name.AsMemory(), value.AsMemory());
     }
 
     /// <summary>

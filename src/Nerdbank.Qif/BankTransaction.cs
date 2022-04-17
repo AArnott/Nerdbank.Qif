@@ -39,11 +39,6 @@ public partial record BankTransaction(AccountType AccountType, DateTime Date, de
     /// </summary>
     public ImmutableList<BankSplit> Splits { get; init; } = ImmutableList<BankSplit>.Empty;
 
-    /// <summary>
-    /// Gets the name of the account these transactions belong to, if known.
-    /// </summary>
-    public string? AccountName { get; init; }
-
     /// <inheritdoc/>
     public virtual bool Equals(BankTransaction? other)
     {
@@ -58,8 +53,7 @@ public partial record BankTransaction(AccountType AccountType, DateTime Date, de
             && EqualityComparer<string?>.Default.Equals(this.Memo, other!.Memo)
             && EqualityComparer<string?>.Default.Equals(this.Category, other!.Category)
             && ByValueCollectionComparer<string>.Default.Equals(this.Address, other!.Address)
-            && ByValueCollectionComparer<BankSplit>.Default.Equals(this.Splits, other!.Splits)
-            && EqualityComparer<string?>.Default.Equals(this.AccountName, other!.AccountName));
+            && ByValueCollectionComparer<BankSplit>.Default.Equals(this.Splits, other!.Splits));
     }
 
     /// <inheritdoc/>
@@ -76,7 +70,6 @@ public partial record BankTransaction(AccountType AccountType, DateTime Date, de
         hash.Add(this.Category);
         hash.Add(this.Address, ByValueCollectionComparer<string>.Default);
         hash.Add(this.Splits, ByValueCollectionComparer<BankSplit>.Default);
-        hash.Add(this.AccountName);
         return hash.ToHashCode();
     }
 

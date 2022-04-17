@@ -116,27 +116,32 @@ LIncome.Salary
     /// Quicken may preceed bank transactions with the account details to indicate those transactions belong to that account.
     /// </summary>
     [Fact]
-    public void CanImportAccountWithTransactions()
+    public void CanImportAccountsWithTransactions()
     {
-        string qifSource = @"!Clear:AutoSwitch
-!Option:AutoSwitch
-!Account
+        string qifSource = @"!Account
 NBank Account 1
 TBank
 ^
 !Type:Bank 
 D01/1/18
-U-400.00
 T-400.00
-CX
-NCard
-PMr Land Lord
-LRent
-^";
+^
+!Account
+NInv Account 1
+TInvst
+^
+!Type:Invst
+D01/1/19
+T-400.00
+^
+";
         QifDocument document = Read(qifSource, this.serializer.ReadDocument);
-        Assert.Single(document.Accounts);
-        Assert.Single(document.Transactions);
-        Assert.Equal("Bank Account 1", document.Transactions[0].AccountName);
+        Assert.Empty(document.Transactions);
+        Assert.Equal(2, document.Accounts.Count);
+        BankAccount bankAccount = Assert.IsType<BankAccount>(document.Accounts[0]);
+        InvestmentAccount investmentAccount = Assert.IsType<InvestmentAccount>(document.Accounts[1]);
+        Assert.Equal(new DateTime(2018, 1, 1), Assert.Single(bankAccount.Transactions).Date);
+        Assert.Equal(new DateTime(2019, 1, 1), Assert.Single(investmentAccount.Transactions).Date);
     }
 
     [Fact]
@@ -511,6 +516,38 @@ TBank
     }
 
     [Fact]
+    public void Write_BankAccount_WithTransactions()
+    {
+        this.AssertSerialized(
+            new BankAccount(Account.Types.Cash, "Account1")
+            {
+                Transactions =
+                {
+                    new(AccountType.Cash, Date, 15),
+                    new(AccountType.Cash, Date2, 16),
+                },
+            },
+            "NAccount1\nTCash\n^\n!Type:Cash\nD02/03/2013\nT15\n^\nD02/04/2013\nT16\n^\n",
+            (writer, account) => this.serializer.Write(writer, account, includeTransactions: true));
+    }
+
+    [Fact]
+    public void Write_InvestmentAccount_WithTransactions()
+    {
+        this.AssertSerialized(
+            new InvestmentAccount("Account1")
+            {
+                Transactions =
+                {
+                    new(Date),
+                    new(Date2),
+                },
+            },
+            "NAccount1\nTInvst\n^\n!Type:Invst\nD02/03/2013\n^\nD02/04/2013\n^\n",
+            (writer, account) => this.serializer.Write(writer, account, includeTransactions: true));
+    }
+
+    [Fact]
     public void Write_BankTransaction()
     {
         this.AssertSerialized(
@@ -631,6 +668,55 @@ TBank
             CreateSampleDocument(),
             expected,
             this.serializer.Write);
+    }
+
+    [Fact]
+    public void Write_Document_WithAccountAssociatedTransactions()
+    {
+        string expected = @"!Account
+NAccount1
+TCCard
+^
+!Type:CCard
+D02/03/2013
+T15
+^
+D02/04/2013
+T16
+^
+!Account
+NAccount2
+TInvst
+^
+!Type:Invst
+D02/03/2013
+^
+D02/04/2013
+^
+";
+        QifDocument document = new()
+        {
+            Accounts =
+            {
+                new BankAccount(Account.Types.CreditCard, "Account1")
+                {
+                    Transactions =
+                    {
+                        new BankTransaction(AccountType.CreditCard, Date, 15),
+                        new BankTransaction(AccountType.CreditCard, Date2, 16),
+                    },
+                },
+                new InvestmentAccount("Account2")
+                {
+                    Transactions =
+                    {
+                        new InvestmentTransaction(Date),
+                        new InvestmentTransaction(Date2),
+                    },
+                },
+            },
+        };
+        this.AssertSerialized(document, expected, this.serializer.Write);
     }
 
     private static QifDocument CreateSampleDocument()
