@@ -97,6 +97,32 @@ $500
     }
 
     [Fact]
+    public void ReadBankTransaction_FewerSplitMemos()
+    {
+        const string qifSource = @"D1/1/2008
+T1500
+SSplit1Cat
+ESplit1Memo
+$400
+SSplit2Cat
+ESplit2Memo
+$600
+SSplit3Cat
+$500
+^
+";
+        BankTransaction transaction = Read(qifSource, r => this.serializer.ReadBankTransaction(r, AccountType.Bank));
+        Assert.Equal(
+            new BankSplit[]
+            {
+                new("Split1Cat", "Split1Memo") { Amount = 400 },
+                new("Split2Cat", "Split2Memo") { Amount = 600 },
+                new("Split3Cat", string.Empty) { Amount = 500 },
+            },
+            transaction.Splits);
+    }
+
+    [Fact]
     public void ReadBankTransaction_UnknownFields()
     {
         const string qifSource = @"D1/1/2008

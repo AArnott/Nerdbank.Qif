@@ -16,7 +16,6 @@ public partial class QifParser : IDisposable
 {
     private static readonly char[] Whitespace = new[] { '\t', ' ' };
     private readonly TextReader reader;
-    private int lineNumber;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="QifParser"/> class.
@@ -32,6 +31,11 @@ public partial class QifParser : IDisposable
     /// Gets the kind of token that the reader is positioned at.
     /// </summary>
     public QifToken Kind { get; private set; } = QifToken.BOF;
+
+    /// <summary>
+    /// Gets the line number containing the current token.
+    /// </summary>
+    public int LineNumber { get; private set; }
 
     /// <summary>
     /// Gets the most recently read <see cref="QifToken.Header" /> token.
@@ -63,15 +67,15 @@ public partial class QifParser : IDisposable
             return this.Kind = QifToken.EOF;
         }
 
-        this.lineNumber++;
-        ThrowIfNot(line.Length > 0, this.lineNumber, "Unexpected empty line in data file.");
+        this.LineNumber++;
+        ThrowIfNot(line.Length > 0, this.LineNumber, "Unexpected empty line in data file.");
 
         this.Field = default;
 
         switch (line[0])
         {
             case '!':
-                ThrowIfNot(line.Length > 1, this.lineNumber, "Line too short.");
+                ThrowIfNot(line.Length > 1, this.LineNumber, "Line too short.");
                 this.Kind = QifToken.Header;
                 int colonIndex = line.IndexOf(':');
                 this.CurrentHeader = colonIndex < 0
@@ -79,11 +83,11 @@ public partial class QifParser : IDisposable
                     : (line.AsMemory(1, colonIndex - 1), TrimEnd(line.AsMemory(colonIndex + 1)));
                 break;
             case '^':
-                ThrowIfNot(line.Length == 1, this.lineNumber, "End of record line too long");
+                ThrowIfNot(line.Length == 1, this.LineNumber, "End of record line too long");
                 this.Kind = QifToken.EndOfRecord;
                 break;
             case 'X':
-                ThrowIfNot(line.Length >= 2, this.lineNumber, "Line too short.");
+                ThrowIfNot(line.Length >= 2, this.LineNumber, "Line too short.");
                 this.Kind = QifToken.Field;
                 this.Field = (line.AsMemory(0, 2), TrimEnd(line.AsMemory(2)));
                 break;

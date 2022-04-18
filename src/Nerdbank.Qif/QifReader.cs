@@ -39,6 +39,9 @@ public class QifReader : IDisposable
     /// <inheritdoc cref="QifParser.Kind"/>
     public QifToken Kind => this.parser.Kind;
 
+    /// <inheritdoc cref="QifParser.LineNumber"/>
+    public int LineNumber => this.parser.LineNumber;
+
     /// <summary>
     /// Gets the value of the header at the current reader position.
     /// </summary>

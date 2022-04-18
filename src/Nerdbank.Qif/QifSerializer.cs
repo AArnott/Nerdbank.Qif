@@ -290,10 +290,15 @@ public class QifSerializer
             }
         }
 
+        while (splitMemos.Count < splitCategories.Count)
+        {
+            splitMemos = splitMemos.Add(string.Empty);
+        }
+
         if (splitCategories.Count != splitMemos.Count ||
             splitCategories.Count != Math.Max(splitAmounts.Count, splitPercentage.Count))
         {
-            throw new InvalidTransactionException("Inconsistent number of fields for splits.");
+            throw new InvalidTransactionException($"Inconsistent number of fields for splits in record that ended on line {reader.LineNumber - 1}.");
         }
 
         ImmutableList<BankSplit> splits = ImmutableList<BankSplit>.Empty;
