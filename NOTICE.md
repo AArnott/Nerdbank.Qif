@@ -7,3 +7,6 @@ This repo has quite the fork history:
 - [MisterY/qif](https://github.com/MisterY/qif) (original)
 
 Props and thanks toward our predecessors who freely shared their time and talents.
+
+But quite honestly, this repo has undergone an extensive rewrite and
+I don't think a single line exists that hasn't been changed.
