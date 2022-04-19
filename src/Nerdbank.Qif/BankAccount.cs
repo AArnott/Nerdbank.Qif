@@ -10,7 +10,7 @@ namespace Nerdbank.Qif;
 /// </summary>
 /// <param name="Type">The type of the account. Typically one of the values found in the <see cref="Types"/> class. This should <em>not</em> be <see cref="Types.Investment"/> as that should lead to creation of an <see cref="InvestmentAccount"/>.</param>
 /// <param name="Name">The name of the account.</param>
-public record BankAccount(string Type, string Name) : Account(Name)
+public record BankAccount(string Type, string Name) : Account(Type, Name)
 {
     /// <inheritdoc/>
     public override List<BankTransaction> Transactions { get; } = new();

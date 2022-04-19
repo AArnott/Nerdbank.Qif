@@ -6,11 +6,12 @@ namespace Nerdbank.Qif;
 /// <summary>
 /// The base type for an account.
 /// </summary>
+/// <param name="Type">The type of the account.</param>
 /// <param name="Name">The name of the account.</param>
 /// <remarks>
 /// Supported derived types are <see cref="BankAccount"/> and <see cref="InvestmentAccount"/>.
 /// </remarks>
-public abstract record Account(string Name)
+public abstract record Account(string Type, string Name)
 {
     /// <summary>
     /// Gets the description.
@@ -31,11 +32,6 @@ public abstract record Account(string Name)
     /// Gets the statement balance.
     /// </summary>
     public decimal? StatementBalance { get; init; }
-
-    /// <summary>
-    /// Gets the account type, as a string.
-    /// </summary>
-    public abstract string Type { get; init; }
 
     /// <summary>
     /// Gets the account type.
@@ -81,6 +77,11 @@ public abstract record Account(string Name)
         /// An investment account.
         /// </summary>
         public const string Investment = "Invst";
+
+        /// <summary>
+        /// An investment account.
+        /// </summary>
+        public const string Investment2 = "Port";
 
         /// <summary>
         /// A container for memorized transactions.

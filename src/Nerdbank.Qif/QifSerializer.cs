@@ -787,8 +787,8 @@ public class QifSerializer
             }
         }
 
-        Account result = type == Account.Types.Investment
-            ? new InvestmentAccount(ValueOrThrow(name, Account.FieldNames.Name))
+        Account result = type is Account.Types.Investment or Account.Types.Investment2
+            ? new InvestmentAccount(type, ValueOrThrow(name, Account.FieldNames.Name))
             : new BankAccount(ValueOrThrow(type, Account.FieldNames.Type), ValueOrThrow(name, Account.FieldNames.Name));
 
         return result with

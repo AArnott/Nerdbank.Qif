@@ -381,6 +381,30 @@ TSome Type
     }
 
     [Fact]
+    public void ReadAccount_InvestmentType()
+    {
+        const string qifSource = @"NMy name
+TInvst
+^
+";
+        Account account = Read(qifSource, this.serializer.ReadAccount);
+        Assert.Equal("Invst", account.Type);
+        Assert.Equal(AccountType.Investment, account.AccountType);
+    }
+
+    [Fact]
+    public void ReadAccount_PortType()
+    {
+        const string qifSource = @"NMy name
+TPort
+^
+";
+        Account account = Read(qifSource, this.serializer.ReadAccount);
+        Assert.Equal("Port", account.Type);
+        Assert.Equal(AccountType.Investment, account.AccountType);
+    }
+
+    [Fact]
     public void ReadAccount_Exhaustive()
     {
         const string qifSource = @"NMy name
@@ -531,6 +555,14 @@ TBank
             "NAccount1\nTBank\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
+            new BankAccount(Account.Types.Investment, "Account1"),
+            "NAccount1\nTInvst\n^\n",
+            this.serializer.Write);
+        this.AssertSerialized(
+            new BankAccount(Account.Types.Investment2, "Account1"),
+            "NAccount1\nTPort\n^\n",
+            this.serializer.Write);
+        this.AssertSerialized(
             new BankAccount("Z", "Account1") { Description = "desc", CreditLimit = 5, StatementBalance = 6, StatementBalanceDate = Date },
             "NAccount1\nTZ\nDdesc\nL5\n/02/03/2013\n$6\n^\n",
             this.serializer.Write);
@@ -561,7 +593,7 @@ TBank
     public void Write_InvestmentAccount_WithTransactions()
     {
         this.AssertSerialized(
-            new InvestmentAccount("Account1")
+            new InvestmentAccount(Account.Types.Investment, "Account1")
             {
                 Transactions =
                 {
@@ -732,7 +764,7 @@ D02/04/2013
                         new BankTransaction(AccountType.CreditCard, Date2, 16),
                     },
                 },
-                new InvestmentAccount("Account2")
+                new InvestmentAccount(Account.Types.Investment, "Account2")
                 {
                     Transactions =
                     {
