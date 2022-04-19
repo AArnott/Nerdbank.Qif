@@ -6,27 +6,15 @@ namespace Nerdbank.Qif;
 /// <summary>
 /// An investment account.
 /// </summary>
+/// <param name="Type">The type of the account. This is expected to be <see cref="Account.Types.Investment"/>.</param>
 /// <param name="Name">The name of the account.</param>
-public record InvestmentAccount(string Name) : Account(Name)
+public record InvestmentAccount(string Type, string Name) : Account(Type, Name)
 {
     /// <inheritdoc/>
     public override List<InvestmentTransaction> Transactions { get; } = new();
 
     /// <inheritdoc/>
     public override AccountType? AccountType => Qif.AccountType.Investment;
-
-    /// <inheritdoc/>
-    public override string Type
-    {
-        get => Types.Investment;
-        init
-        {
-            if (value != Types.Investment)
-            {
-                throw new ArgumentException();
-            }
-        }
-    }
 
     /// <inheritdoc/>
     public virtual bool Equals(InvestmentAccount? other)
