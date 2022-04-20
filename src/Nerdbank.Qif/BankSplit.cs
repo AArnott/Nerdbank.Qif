@@ -8,7 +8,7 @@ namespace Nerdbank.Qif;
 /// </summary>
 /// <param name="Category">The category of the split.</param>
 /// <param name="Memo">The memo of the split.</param>
-public record BankSplit(string Category, string Memo)
+public record BankSplit(string Category, string? Memo)
 {
     /// <summary>
     /// Gets the amount of the split.

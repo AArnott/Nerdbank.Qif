@@ -233,10 +233,7 @@ public class QifSerializer
         string? memo = null;
         string? category = null;
         ImmutableList<string> address = ImmutableList<string>.Empty;
-        ImmutableList<string> splitCategories = ImmutableList<string>.Empty;
-        ImmutableList<string> splitMemos = ImmutableList<string>.Empty;
-        ImmutableList<decimal> splitAmounts = ImmutableList<decimal>.Empty;
-        ImmutableList<decimal> splitPercentage = ImmutableList<decimal>.Empty;
+        ImmutableList<BankSplit> splits = ImmutableList<BankSplit>.Empty;
 
         foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
         {
@@ -274,48 +271,20 @@ public class QifSerializer
             }
             else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitCategory, field.Name))
             {
-                splitCategories = splitCategories.Add(reader.ReadFieldAsString());
+                splits = splits.Add(new BankSplit(reader.ReadFieldAsString(), null));
             }
             else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitMemo, field.Name))
             {
-                splitMemos = splitMemos.Add(reader.ReadFieldAsString());
+                splits = splits.SetItem(splits.Count - 1, splits[^1] with { Memo = reader.ReadFieldAsString() });
             }
             else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitAmount, field.Name))
             {
-                splitAmounts = splitAmounts.Add(reader.ReadFieldAsDecimal());
+                splits = splits.SetItem(splits.Count - 1, splits[^1] with { Amount = reader.ReadFieldAsDecimal() });
             }
             else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitPercent, field.Name))
             {
-                splitPercentage = splitPercentage.Add(reader.ReadFieldAsDecimal());
+                splits = splits.SetItem(splits.Count - 1, splits[^1] with { Percentage = reader.ReadFieldAsDecimal() });
             }
-        }
-
-        while (splitMemos.Count < splitCategories.Count)
-        {
-            splitMemos = splitMemos.Add(string.Empty);
-        }
-
-        if (splitCategories.Count != splitMemos.Count ||
-            splitCategories.Count != Math.Max(splitAmounts.Count, splitPercentage.Count))
-        {
-            throw new InvalidTransactionException($"Inconsistent number of fields for splits in record that ended on line {reader.LineNumber - 1}.");
-        }
-
-        ImmutableList<BankSplit> splits = ImmutableList<BankSplit>.Empty;
-        if (splitCategories.Count > 0)
-        {
-            var splitsBuilder = splits.ToBuilder();
-            for (int i = 0; i < splitCategories.Count; i++)
-            {
-                BankSplit split = new(splitCategories[i], splitMemos[i])
-                {
-                    Amount = splitAmounts.Count > i ? splitAmounts[i] : null,
-                    Percentage = splitPercentage.Count > i ? splitPercentage[i] : null,
-                };
-                splitsBuilder.Add(split);
-            }
-
-            splits = splitsBuilder.ToImmutable();
         }
 
         return new(

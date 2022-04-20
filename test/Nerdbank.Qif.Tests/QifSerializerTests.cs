@@ -96,6 +96,9 @@ $500
             transaction.Splits);
     }
 
+    /// <summary>
+    /// Asserts that when memos are omitted from a split line item, we still track subsequent memos the way Quicken intended.
+    /// </summary>
     [Fact]
     public void ReadBankTransaction_FewerSplitMemos()
     {
@@ -108,7 +111,10 @@ SSplit2Cat
 ESplit2Memo
 $600
 SSplit3Cat
-$500
+$300
+SSplit4Cat
+ESplit4Memo
+$200
 ^
 ";
         BankTransaction transaction = Read(qifSource, r => this.serializer.ReadBankTransaction(r, AccountType.Bank));
@@ -117,7 +123,8 @@ $500
             {
                 new("Split1Cat", "Split1Memo") { Amount = 400 },
                 new("Split2Cat", "Split2Memo") { Amount = 600 },
-                new("Split3Cat", string.Empty) { Amount = 500 },
+                new("Split3Cat", null) { Amount = 300 },
+                new("Split4Cat", "Split4Memo") { Amount = 200 },
             },
             transaction.Splits);
     }
