@@ -58,12 +58,12 @@ public class QifReader : IDisposable
     /// <summary>
     /// Gets the value of the field at the current reader position.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifToken.Field"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifToken.Field"/> or <see cref="QifToken.CommaDelimitedValue"/>.</exception>
     public (ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) Field
     {
         get
         {
-            this.ThrowIfNotAt(QifToken.Field);
+            Verify.Operation(this.parser.Kind is QifToken.Field or QifToken.CommaDelimitedValue, "Reader is not at a field or comma-delimited value.");
             return this.parser.Field;
         }
     }

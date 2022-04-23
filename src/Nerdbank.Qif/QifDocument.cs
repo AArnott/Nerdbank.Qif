@@ -45,6 +45,11 @@ public class QifDocument
     public List<Security> Securities { get; } = new();
 
     /// <summary>
+    /// Gets a collection of price points for securities.
+    /// </summary>
+    public List<Price> Prices { get; } = new();
+
+    /// <summary>
     /// Imports a QIF file and returns a QifDom object.
     /// </summary>
     /// <param name="fileName">The QIF file to import.</param>

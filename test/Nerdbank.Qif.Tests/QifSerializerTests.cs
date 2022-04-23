@@ -335,6 +335,18 @@ TMutual Fund
     }
 
     [Fact]
+    public void ReadPrice()
+    {
+        const string qifSource = @"""BEXFX"",11.84,"" 3/ 5'15""
+^
+";
+        Price price = Read(qifSource, this.serializer.ReadPrice);
+        Assert.Equal("BEXFX", price.Symbol);
+        Assert.Equal(11.84m, price.Value);
+        Assert.Equal(new DateTime(2015, 3, 5), price.Date);
+    }
+
+    [Fact]
     public void ReadInvestmentTransaction_Simple()
     {
         const string qifSource = @"D10/27' 6
@@ -551,6 +563,11 @@ Nsecurity1
 ^
 Nsecurity2
 ^
+!Type:Prices
+""BEXFX"",11.52,"" 2/ 3'13""
+^
+""BEXFX"",11.53,"" 2/ 4'13""
+^
 ";
 
         QifDocument actual = Read(qifSource, this.serializer.ReadDocument);
@@ -559,6 +576,7 @@ Nsecurity2
         Assert.Equal<Security>(expected.Securities, actual.Securities);
         Assert.Equal<Category>(expected.Categories, actual.Categories);
         Assert.Equal<Class>(expected.Classes, actual.Classes);
+        Assert.Equal<Price>(expected.Prices, actual.Prices);
     }
 
     [Fact]
@@ -597,6 +615,21 @@ Nsecurity2
         this.AssertSerialized(
             new Security("my name") { Symbol = "Sym", Type = "Typ" },
             "Nmy name\nSSym\nTTyp\n^\n",
+            this.serializer.Write);
+    }
+
+    [Fact]
+    public void Write_Price()
+    {
+        this.AssertSerialized(
+            new Price("COMPX", 2756.42m, Date),
+            "\"COMPX\",2756.42,\"02/03/2013\"\n^\n",
+            this.serializer.Write);
+
+        // Write another price to prove that the line will not begin with a comma.
+        this.AssertSerialized(
+            new Price("COMPX", 2756.43m, Date2),
+            "\"COMPX\",2756.43,\"02/04/2013\"\n^\n",
             this.serializer.Write);
     }
 
@@ -772,6 +805,11 @@ Nsecurity1
 ^
 Nsecurity2
 ^
+!Type:Prices
+""BEXFX"",11.52,""02/03/2013""
+^
+""BEXFX"",11.53,""02/04/2013""
+^
 !Account
 NAccount1
 TBank
@@ -878,6 +916,11 @@ D02/04/2013
             {
                 new Security("security1"),
                 new Security("security2"),
+            },
+            Prices =
+            {
+                new Price("BEXFX", 11.52m, Date),
+                new Price("BEXFX", 11.53m, Date2),
             },
         };
     }

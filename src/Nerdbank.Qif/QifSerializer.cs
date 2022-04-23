@@ -34,6 +34,7 @@ public class QifSerializer
         WriteRecord("Type", "Cat", value.Categories, this.Write);
         WriteRecord("Type", "Class", value.Classes, this.Write);
         WriteRecord("Type", "Security", value.Securities, this.Write);
+        WriteRecord("Type", "Prices", value.Prices, this.Write);
 
         // Finish with all account details at the end so that no transactions follow the last account
         // which would be misinterpreted by importers as associating all those transactions with that account.
@@ -143,6 +144,14 @@ public class QifSerializer
                         while (reader.Kind == QifToken.Field)
                         {
                             result.Securities.Add(this.ReadSecurity(reader));
+                        }
+                    }
+                    else if (QifUtilities.Equals("Prices", reader.Header.Value))
+                    {
+                        reader.MoveNext();
+                        while (reader.Kind == QifToken.CommaDelimitedValue)
+                        {
+                            result.Prices.Add(this.ReadPrice(reader));
                         }
                     }
                     else
@@ -620,6 +629,39 @@ public class QifSerializer
             Symbol = symbol,
             Type = type,
         };
+    }
+
+    /// <inheritdoc cref="Write(QifWriter, Price)" />
+    public virtual void Write(QifWriter writer, Price value)
+    {
+        writer.WriteCommaDelimitedValue(value.Symbol);
+        writer.WriteCommaDelimitedValue(value.Value);
+        writer.WriteCommaDelimitedValue(value.Date);
+        writer.WriteEndOfRecord();
+    }
+
+    /// <summary>
+    /// Deserializes a <see cref="Price"/> from the given <see cref="QifReader"/>.
+    /// </summary>
+    /// <param name="reader">The reader to deserialize from.</param>
+    /// <returns>The deserialized record.</returns>
+    public virtual Price ReadPrice(QifReader reader)
+    {
+        if (reader.Kind == QifToken.Header)
+        {
+            reader.MoveNext();
+        }
+
+        string symbol = reader.ReadFieldAsString();
+        reader.MoveNext();
+        decimal value = reader.ReadFieldAsDecimal();
+        reader.MoveNext();
+        DateTime date = reader.ReadFieldAsDate();
+
+        reader.MoveToNext(QifToken.EndOfRecord);
+        reader.ReadEndOfRecord();
+
+        return new(symbol, value, date);
     }
 
     /// <inheritdoc cref="Write(QifWriter, Class)" />

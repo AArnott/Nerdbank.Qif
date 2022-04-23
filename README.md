@@ -5,6 +5,22 @@
 
 This is a library for creating, reading, modifying and writing Quicken Interchange Format (QIF) files.
 
+The following data types are supported in QIF files:
+
+* Bank transactions
+* Investment transactions
+* Memorized transactions
+* Classes
+* Categories
+* Price history
+* Securities
+* Accounts
+
+Most use cases will leverage `QifDocument` for its ease in representing an entire QIF file for import/export.
+In some cases you may find the lower-level `QifReader` and `QifWriter` (or even the `QifParser`) useful.
+
+Multi-culture support is built-in. Some methods are virtual, allowing you to tweak the exact QIF syntax where necessary.
+
 ## Sample usage
 
 ```cs

@@ -29,6 +29,11 @@ public enum QifToken
     Field,
 
     /// <summary>
+    /// The reader is positioned at a comma-delimited value.
+    /// </summary>
+    CommaDelimitedValue,
+
+    /// <summary>
     /// The reader is positioned at the end of a list of fields for an individual record.
     /// </summary>
     EndOfRecord,

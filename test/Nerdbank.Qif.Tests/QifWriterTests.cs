@@ -96,9 +96,57 @@ public class QifWriterTests : TestBase
         this.AssertWritten(string.Empty);
     }
 
-    private void AssertWritten(string qif)
+    [Fact]
+    public void WriteCommaDelimitedValue_WithString()
+    {
+        this.writer.WriteCommaDelimitedValue("Str1");
+        this.AssertWritten("\"Str1\"", clear: false);
+        this.writer.WriteCommaDelimitedValue("Str2");
+        this.AssertWritten("\"Str1\",\"Str2\"", clear: false);
+        this.writer.WriteEndOfRecord();
+        this.AssertWritten("\"Str1\",\"Str2\"\n^\n", clear: false);
+    }
+
+    [Fact]
+    public void WriteCommaDelimitedValue_WithDate()
+    {
+        this.writer.WriteCommaDelimitedValue(new DateTime(2011, 2, 3));
+        this.AssertWritten("\"02/03/2011\"");
+    }
+
+    [Fact]
+    public void WriteCommaDelimitedValue_WithDecimal()
+    {
+        this.writer.WriteCommaDelimitedValue(1.2m);
+        this.AssertWritten("1.2");
+    }
+
+    [Fact]
+    public void WriteCommaDelimitedValue_MultiValueRecord()
+    {
+        this.writer.WriteCommaDelimitedValue("Str1");
+        this.AssertWritten("\"Str1\"", clear: false);
+        this.writer.WriteCommaDelimitedValue(1.2m);
+        this.AssertWritten("\"Str1\",1.2", clear: false);
+        this.writer.WriteEndOfRecord();
+        this.AssertWritten("\"Str1\",1.2\n^\n");
+    }
+
+    [Fact]
+    public void WriteCommaDelimitedValue_TwoRecords()
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            this.WriteCommaDelimitedValue_MultiValueRecord();
+        }
+    }
+
+    private void AssertWritten(string qif, bool clear = true)
     {
         Assert.Equal(qif, this.stringWriter.ToString());
-        this.stringWriter.GetStringBuilder().Clear();
+        if (clear)
+        {
+            this.stringWriter.GetStringBuilder().Clear();
+        }
     }
 }

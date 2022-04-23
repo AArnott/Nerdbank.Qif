@@ -12,6 +12,8 @@ public class QifWriter
 {
     private readonly TextWriter writer;
 
+    private bool commaDelimitedValueWritten;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="QifWriter"/> class.
     /// </summary>
@@ -81,6 +83,12 @@ public class QifWriter
     /// </summary>
     public void WriteEndOfRecord()
     {
+        if (this.commaDelimitedValueWritten)
+        {
+            this.writer.WriteLine();
+            this.commaDelimitedValueWritten = false;
+        }
+
         this.writer.WriteLine("^");
     }
 
@@ -185,5 +193,52 @@ public class QifWriter
             default:
                 throw new ArgumentException();
         }
+    }
+
+    /// <summary>
+    /// Writes a value without a field name prefix, adding a leading comma if this is not the first such value written for this record.
+    /// </summary>
+    /// <param name="value">The value to be written.</param>
+    public void WriteCommaDelimitedValue(ReadOnlySpan<char> value)
+    {
+        if (this.commaDelimitedValueWritten)
+        {
+            this.writer.Write(',');
+        }
+
+        this.writer.Write('"');
+        this.writer.Write(value);
+        this.writer.Write('"');
+        this.commaDelimitedValueWritten = true;
+    }
+
+    /// <inheritdoc cref="WriteCommaDelimitedValue(ReadOnlySpan{char})"/>
+    public void WriteCommaDelimitedValue(decimal value)
+    {
+        if (this.commaDelimitedValueWritten)
+        {
+            this.writer.Write(',');
+        }
+
+        Span<char> buffer = stackalloc char[100];
+        Assumes.True(value.TryFormat(buffer, out int charsWritten, provider: this.FormatProvider));
+        this.writer.Write(buffer.Slice(0, charsWritten));
+        this.commaDelimitedValueWritten = true;
+    }
+
+    /// <inheritdoc cref="WriteCommaDelimitedValue(ReadOnlySpan{char})"/>
+    public void WriteCommaDelimitedValue(DateTime value)
+    {
+        if (this.commaDelimitedValueWritten)
+        {
+            this.writer.Write(',');
+        }
+
+        this.writer.Write('"');
+        Span<char> buffer = stackalloc char[20];
+        Assumes.True(value.TryFormat(buffer, out int charsWritten, "d", this.FormatProvider));
+        this.writer.Write(buffer.Slice(0, charsWritten));
+        this.writer.Write('"');
+        this.commaDelimitedValueWritten = true;
     }
 }

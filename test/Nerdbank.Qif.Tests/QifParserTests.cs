@@ -110,4 +110,18 @@ public class QifParserTests : TestBase
         Assert.Equal(QifToken.Field, parser.Read());
         AssertEqual("Ab", parser.Field.Value);
     }
+
+    [Fact]
+    public void ReadCommaDelimitedValues()
+    {
+        using QifParser parser = new(new StringReader("!Type:Prices\n\"BEXFX\",11.91,\" 3/ 3'15\"\n^\n"));
+        Assert.Equal(QifToken.Header, parser.Read());
+        Assert.Equal(QifToken.CommaDelimitedValue, parser.Read());
+        AssertEqual("BEXFX", parser.Field.Value);
+        Assert.Equal(QifToken.CommaDelimitedValue, parser.Read());
+        AssertEqual("11.91", parser.Field.Value);
+        Assert.Equal(QifToken.CommaDelimitedValue, parser.Read());
+        AssertEqual(" 3/ 3'15", parser.Field.Value);
+        Assert.Equal(QifToken.EndOfRecord, parser.Read());
+    }
 }

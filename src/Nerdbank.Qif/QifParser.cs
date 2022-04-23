@@ -16,6 +16,7 @@ public partial class QifParser : IDisposable
 {
     private static readonly char[] Whitespace = new[] { '\t', ' ' };
     private readonly TextReader reader;
+    private ReadOnlyMemory<char> remainingCommaDelimitedValues;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="QifParser"/> class.
@@ -61,6 +62,12 @@ public partial class QifParser : IDisposable
     /// <returns>The kind of token that was read. Get details of the token from properties on this class.</returns>
     public QifToken Read()
     {
+        if (this.remainingCommaDelimitedValues.Length > 0)
+        {
+            this.Field = (default, this.ReadNextCommaDelimitedValue());
+            return QifToken.CommaDelimitedValue;
+        }
+
         string? line = this.reader.ReadLine();
         if (line is null)
         {
@@ -90,6 +97,11 @@ public partial class QifParser : IDisposable
                 ThrowIfNot(line.Length >= 2, this.LineNumber, "Line too short.");
                 this.Kind = QifToken.Field;
                 this.Field = (line.AsMemory(0, 2), TrimEnd(line.AsMemory(2)));
+                break;
+            case '"':
+                this.Kind = QifToken.CommaDelimitedValue; // At least, for Price records they always start with a "
+                this.remainingCommaDelimitedValues = line.AsMemory();
+                this.Field = (default, this.ReadNextCommaDelimitedValue());
                 break;
             default:
                 this.Kind = QifToken.Field;
@@ -135,5 +147,54 @@ public partial class QifParser : IDisposable
         {
             throw new InvalidTransactionException($"Line {lineNumber}: {message}");
         }
+    }
+
+    private ReadOnlyMemory<char> ReadNextCommaDelimitedValue()
+    {
+        Verify.Operation(this.remainingCommaDelimitedValues.Length > 0, "No comma-delimited values remaining.");
+        ReadOnlyMemory<char> result = default;
+        if (this.remainingCommaDelimitedValues.Span[0] == '"')
+        {
+            // The value is quoted, so find the closing quote first.
+            int closeQuoteIndex = this.remainingCommaDelimitedValues.Span.Slice(1).IndexOf('"');
+            if (closeQuoteIndex == -1)
+            {
+                throw new InvalidTransactionException("Missing close quote in comma-separated values.");
+            }
+
+            // As we slice the result, do not include the opening and closing quotes since at this point they have served their purpose.
+            result = this.remainingCommaDelimitedValues.Slice(1, closeQuoteIndex);
+            this.remainingCommaDelimitedValues = this.remainingCommaDelimitedValues.Slice(result.Length + 2);
+
+            if (this.remainingCommaDelimitedValues.Length > 0)
+            {
+                // More characters follow the closing quote. We expect the next one to be a comma.
+                if (this.remainingCommaDelimitedValues.Span[0] != ',')
+                {
+                    throw new InvalidTransactionException("Missing expected comma after closing quote.");
+                }
+
+                // Trim off the comma that follows the closing quote.
+                this.remainingCommaDelimitedValues = this.remainingCommaDelimitedValues.Slice(1);
+            }
+        }
+        else
+        {
+            int commaIndex = this.remainingCommaDelimitedValues.Span.IndexOf(',');
+            if (commaIndex < 0)
+            {
+                // No more commas. The rest of the characters are a single value.
+                result = this.remainingCommaDelimitedValues;
+                this.remainingCommaDelimitedValues = default;
+            }
+            else
+            {
+                // Consume the value up to the next comma.
+                result = this.remainingCommaDelimitedValues.Slice(0, commaIndex);
+                this.remainingCommaDelimitedValues = this.remainingCommaDelimitedValues.Slice(commaIndex + 1);
+            }
+        }
+
+        return result;
     }
 }
