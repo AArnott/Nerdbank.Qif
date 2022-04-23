@@ -179,6 +179,10 @@ public class QifSerializer
 
             return result;
         }
+        catch (Exception ex)
+        {
+            throw new InvalidTransactionException($"Error reading record at or just above line {reader.LineNumber}.", ex);
+        }
         finally
         {
             reader.Dispose();
