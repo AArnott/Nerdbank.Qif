@@ -6,7 +6,7 @@ namespace Nerdbank.Qif;
 /// <summary>
 /// The base type for an account.
 /// </summary>
-/// <param name="Type">The type of the account.</param>
+/// <param name="Type">The type of the account. Typically set to one of the constants declared on the <see cref="Types"/> class.</param>
 /// <param name="Name">The name of the account.</param>
 /// <remarks>
 /// Supported derived types are <see cref="BankAccount"/> and <see cref="InvestmentAccount"/>.
