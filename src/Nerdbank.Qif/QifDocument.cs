@@ -20,24 +20,29 @@ public class QifDocument
     public List<Transaction> Transactions { get; } = new();
 
     /// <summary>
-    /// Gets a collection of memorized transaction list transactions.
+    /// Gets a collection of memorized transactions.
     /// </summary>
     public List<MemorizedTransaction> MemorizedTransactions { get; } = new();
 
     /// <summary>
-    /// Gets a collection of account list transactions.
+    /// Gets a collection of accounts.
     /// </summary>
     public List<Account> Accounts { get; } = new();
 
     /// <summary>
-    /// Gets a collection of category list transactions.
+    /// Gets a collection of categories.
     /// </summary>
     public List<Category> Categories { get; } = new();
 
     /// <summary>
-    /// Gets a collection of class list transactions.
+    /// Gets a collection of classes.
     /// </summary>
     public List<Class> Classes { get; } = new();
+
+    /// <summary>
+    /// Gets a collection of securities.
+    /// </summary>
+    public List<Security> Securities { get; } = new();
 
     /// <summary>
     /// Imports a QIF file and returns a QifDom object.

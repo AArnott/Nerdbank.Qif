@@ -33,6 +33,7 @@ public class QifSerializer
         WriteRecord("Type", Account.Types.Memorized, value.MemorizedTransactions, this.Write);
         WriteRecord("Type", "Cat", value.Categories, this.Write);
         WriteRecord("Type", "Class", value.Classes, this.Write);
+        WriteRecord("Type", "Security", value.Securities, this.Write);
 
         // Finish with all account details at the end so that no transactions follow the last account
         // which would be misinterpreted by importers as associating all those transactions with that account.
@@ -134,6 +135,14 @@ public class QifSerializer
                         while (reader.Kind == QifToken.Field)
                         {
                             result.Classes.Add(this.ReadClass(reader));
+                        }
+                    }
+                    else if (QifUtilities.Equals("Security", reader.Header.Value))
+                    {
+                        reader.MoveNext();
+                        while (reader.Kind == QifToken.Field)
+                        {
+                            result.Securities.Add(this.ReadSecurity(reader));
                         }
                     }
                     else
@@ -525,7 +534,7 @@ public class QifSerializer
         bool incomeCategory = false;
         bool expenseCategory = false;
         string? taxSchedule = null;
-        decimal budgetAmount = 0;
+        decimal? budgetAmount = null;
 
         foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
         {
@@ -567,6 +576,49 @@ public class QifSerializer
             ExpenseCategory = expenseCategory,
             TaxSchedule = taxSchedule,
             BudgetAmount = budgetAmount,
+        };
+    }
+
+    /// <inheritdoc cref="Write(QifWriter, Security)" />
+    public virtual void Write(QifWriter writer, Security value)
+    {
+        writer.WriteField(Security.FieldNames.Name, value.Name);
+        writer.WriteField(Security.FieldNames.Symbol, value.Symbol);
+        writer.WriteField(Security.FieldNames.Type, value.Type);
+        writer.WriteEndOfRecord();
+    }
+
+    /// <summary>
+    /// Deserializes a <see cref="Security"/> from the given <see cref="QifReader"/>.
+    /// </summary>
+    /// <param name="reader">The reader to deserialize from.</param>
+    /// <returns>The deserialized record.</returns>
+    public virtual Security ReadSecurity(QifReader reader)
+    {
+        string? name = null;
+        string? symbol = null;
+        string? type = null;
+
+        foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
+        {
+            if (QifUtilities.Equals(Security.FieldNames.Name, reader.Field.Name))
+            {
+                name = reader.ReadFieldAsString();
+            }
+            else if (QifUtilities.Equals(Security.FieldNames.Symbol, reader.Field.Name))
+            {
+                symbol = reader.ReadFieldAsString();
+            }
+            else if (QifUtilities.Equals(Security.FieldNames.Type, reader.Field.Name))
+            {
+                type = reader.ReadFieldAsString();
+            }
+        }
+
+        return new(ValueOrThrow(name, Security.FieldNames.Name))
+        {
+            Symbol = symbol,
+            Type = type,
         };
     }
 

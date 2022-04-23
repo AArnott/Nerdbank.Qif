@@ -291,6 +291,7 @@ I
         Assert.True(category.IncomeCategory);
         Assert.False(category.ExpenseCategory);
         Assert.Equal("460", category.TaxSchedule);
+        Assert.Null(category.BudgetAmount);
     }
 
     [Fact]
@@ -307,6 +308,30 @@ B30.20
         Assert.True(category.ExpenseCategory);
         Assert.False(category.IncomeCategory);
         Assert.Equal(30.20m, category.BudgetAmount);
+    }
+
+    [Fact]
+    public void ReadSecurity_Minimal()
+    {
+        const string qifSource = @"NMFS Growth Allocation Fund Class R4
+^
+";
+        Security security = Read(qifSource, this.serializer.ReadSecurity);
+        Assert.Equal("MFS Growth Allocation Fund Class R4", security.Name);
+    }
+
+    [Fact]
+    public void ReadSecurity_Exhaustive()
+    {
+        const string qifSource = @"NMFS Growth Allocation Fund Class R4
+SMAGJX
+TMutual Fund
+^
+";
+        Security security = Read(qifSource, this.serializer.ReadSecurity);
+        Assert.Equal("MFS Growth Allocation Fund Class R4", security.Name);
+        Assert.Equal("MAGJX", security.Symbol);
+        Assert.Equal("Mutual Fund", security.Type);
     }
 
     [Fact]
@@ -521,11 +546,19 @@ TBank
 NAccount2
 TBank
 ^
+!Type:Security
+Nsecurity1
+^
+Nsecurity2
+^
 ";
 
         QifDocument actual = Read(qifSource, this.serializer.ReadDocument);
         QifDocument expected = CreateSampleDocument();
         Assert.Equal<Transaction>(expected.Transactions, actual.Transactions);
+        Assert.Equal<Security>(expected.Securities, actual.Securities);
+        Assert.Equal<Category>(expected.Categories, actual.Categories);
+        Assert.Equal<Class>(expected.Classes, actual.Classes);
     }
 
     [Fact]
@@ -551,6 +584,19 @@ TBank
         this.AssertSerialized(
             new Category("my name") { BudgetAmount = 10, Description = "desc", ExpenseCategory = true, IncomeCategory = true, TaxRelated = true, TaxSchedule = "S" },
             "Nmy name\nDdesc\nT\nRS\nE\nI\nB10\n^\n",
+            this.serializer.Write);
+    }
+
+    [Fact]
+    public void Write_Security()
+    {
+        this.AssertSerialized(
+            new Security("my name"),
+            "Nmy name\n^\n",
+            this.serializer.Write);
+        this.AssertSerialized(
+            new Security("my name") { Symbol = "Sym", Type = "Typ" },
+            "Nmy name\nSSym\nTTyp\n^\n",
             this.serializer.Write);
     }
 
@@ -721,6 +767,11 @@ Nclass1
 ^
 Nclass2
 ^
+!Type:Security
+Nsecurity1
+^
+Nsecurity2
+^
 !Account
 NAccount1
 TBank
@@ -822,6 +873,11 @@ D02/04/2013
             {
                 new Class("class1"),
                 new Class("class2"),
+            },
+            Securities =
+            {
+                new Security("security1"),
+                new Security("security2"),
             },
         };
     }
