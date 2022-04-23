@@ -153,6 +153,17 @@ public record InvestmentTransaction(DateTime Date) : Transaction(AccountType.Inv
 
         /// <summary>Addition of shares into an account.</summary>
         public const string ShrsIn = "ShrsIn";
+
+        /// <summary>
+        /// A withdrawal of currency from the investment account.
+        /// The <see cref="AccountForTransfer"/> property should contain the receiving account name.
+        /// </summary>
+        public const string WithdrwX = "WithdrwX";
+
+        /// <summary>
+        /// A cash deposit to the investment account.
+        /// </summary>
+        public const string Cash = "Cash";
     }
 
     /// <summary>
