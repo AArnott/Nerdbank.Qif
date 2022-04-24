@@ -1015,7 +1015,27 @@ Ntag2
     [Fact]
     public void Write_Document()
     {
-        string expected = @"!Type:Bank
+        string expected = @"!Type:Tag
+Ntag1
+^
+Ntag2
+^
+!Type:Class
+Nclass1
+^
+Nclass2
+^
+!Type:Cat
+Ncat1
+^
+Ncat2
+^
+!Type:Security
+Nsecurity1
+^
+Nsecurity2
+^
+!Type:Bank
 D02/03/2013
 T9
 ^
@@ -1063,26 +1083,6 @@ T10
 KD
 D02/04/2013
 T10
-^
-!Type:Cat
-Ncat1
-^
-Ncat2
-^
-!Type:Tag
-Ntag1
-^
-Ntag2
-^
-!Type:Class
-Nclass1
-^
-Nclass2
-^
-!Type:Security
-Nsecurity1
-^
-Nsecurity2
 ^
 !Type:Prices
 ""BEXFX"",11.52,""02/03/2013""

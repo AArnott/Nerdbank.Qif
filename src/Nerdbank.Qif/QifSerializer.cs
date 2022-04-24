@@ -24,6 +24,10 @@ public class QifSerializer
                                  group tx by tx.AccountType into txTypes
                                  orderby txTypes.Key
                                  select txTypes;
+        WriteRecord("Type", "Tag", value.Tags, this.Write);
+        WriteRecord("Type", "Class", value.Classes, this.Write);
+        WriteRecord("Type", "Cat", value.Categories, this.Write);
+        WriteRecord("Type", "Security", value.Securities, this.Write);
         foreach (var txGroup in transactionsByType)
 #pragma warning restore IDE0008 // Use explicit type
         {
@@ -31,10 +35,6 @@ public class QifSerializer
         }
 
         WriteRecord("Type", Account.Types.Memorized, value.MemorizedTransactions, this.Write);
-        WriteRecord("Type", "Cat", value.Categories, this.Write);
-        WriteRecord("Type", "Tag", value.Tags, this.Write);
-        WriteRecord("Type", "Class", value.Classes, this.Write);
-        WriteRecord("Type", "Security", value.Securities, this.Write);
         WriteRecord("Type", "Prices", value.Prices, this.Write);
 
         // Finish with all account details at the end so that no transactions follow the last account
