@@ -588,6 +588,19 @@ TMutual Fund
     }
 
     [Fact]
+    public void ReadPrice_MixedNumber()
+    {
+        // Yes, Quicken *actually* will emit this, amidst other rows that use decimal numbers.
+        const string qifSource = @"""BEXFX"",11 3/4,"" 3/ 5'15""
+^
+";
+        Price price = Read(qifSource, this.serializer.ReadPrice);
+        Assert.Equal("BEXFX", price.Symbol);
+        Assert.Equal(11.75m, price.Value);
+        Assert.Equal(new DateTime(2015, 3, 5), price.Date);
+    }
+
+    [Fact]
     public void ReadInvestmentTransaction_Simple()
     {
         const string qifSource = @"D10/27' 6

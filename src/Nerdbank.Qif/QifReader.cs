@@ -118,7 +118,28 @@ public class QifReader : IDisposable
     /// </summary>
     /// <returns>The parsed value.</returns>
     /// <exception cref="InvalidOperationException">Thrown if <see cref="Kind"/> is not <see cref="QifToken.Field"/>.</exception>
-    public virtual decimal ReadFieldAsDecimal() => decimal.Parse(this.Field.Value.Span, NumberStyles.Any, this.FormatProvider);
+    public virtual decimal ReadFieldAsDecimal()
+    {
+        // Unbelievably, Quicken can represent decimals as mixed numbers or fractions too
+        ReadOnlySpan<char> span = this.Field.Value.Span;
+        if (span.IndexOf('/') < 0)
+        {
+            return decimal.Parse(span, NumberStyles.Any, this.FormatProvider);
+        }
+
+        int spaceIndex = span.IndexOf(' ');
+        ReadOnlySpan<char> wholeNumberSpan = spaceIndex < 0 ? default : span.Slice(0, spaceIndex);
+        ReadOnlySpan<char> fractionalNumberSpan = span.Slice(spaceIndex + 1);
+        int slashIndex = fractionalNumberSpan.IndexOf('/');
+        ReadOnlySpan<char> numeratorSpan = fractionalNumberSpan.Slice(0, slashIndex);
+        ReadOnlySpan<char> denominatorSpan = fractionalNumberSpan.Slice(slashIndex + 1);
+        const NumberStyles wholeNumberStyles = NumberStyles.AllowThousands | NumberStyles.AllowLeadingSign;
+        int wholeNumber = wholeNumberSpan.Length == 0 ? 0 : int.Parse(wholeNumberSpan, wholeNumberStyles, this.FormatProvider);
+        int numerator = int.Parse(numeratorSpan, wholeNumberStyles, this.FormatProvider);
+        int denominator = int.Parse(denominatorSpan, wholeNumberStyles, this.FormatProvider);
+        decimal result = wholeNumber + ((decimal)numerator / denominator);
+        return result;
+    }
 
     /// <summary>
     /// Parses the field value as a <see cref="ClearedState"/>.

@@ -59,6 +59,16 @@ public class QifReaderTests : TestBase
         this.ReadField("N", "Nuther Account");
         this.ReadField("T", "Oth A");
         this.reader.ReadEndOfRecord();
+        this.ReadHeader("Type", "Prices");
+        this.ReadField(string.Empty, "ACOM");
+        this.ReadField(string.Empty, "33 3/4");
+        this.ReadField(string.Empty, " 3/ 4'11");
+        this.reader.ReadEndOfRecord();
+        this.ReadHeader("Type", "Prices");
+        this.ReadField(string.Empty, "XLM");
+        this.ReadField(string.Empty, "1/4");
+        this.ReadField(string.Empty, " 1/21'21");
+        this.reader.ReadEndOfRecord();
         Assert.Equal(QifToken.EOF, this.reader.Kind);
     }
 
@@ -69,9 +79,9 @@ public class QifReaderTests : TestBase
         {
             this.Logger.WriteLine($"{this.reader.Header.Name} {this.reader.Header.Value} records:");
             this.reader.MoveNext();
-            while (this.reader.Kind == QifToken.Field)
+            while (this.reader.Kind is QifToken.Field or QifToken.CommaDelimitedValue)
             {
-                while (this.reader.Kind == QifToken.Field)
+                while (this.reader.Kind is QifToken.Field or QifToken.CommaDelimitedValue)
                 {
                     this.Logger.WriteLine($"\t{this.reader.Field.Name} = {this.reader.Field.Value}");
                     this.reader.MoveNext();
@@ -88,7 +98,7 @@ public class QifReaderTests : TestBase
     [Fact]
     public void MoveToNext()
     {
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 7; i++)
         {
             Assert.Equal(QifToken.Header, this.reader.Kind);
             Assert.True(this.reader.MoveToNext(QifToken.Header));
@@ -132,6 +142,25 @@ public class QifReaderTests : TestBase
         Assert.True(this.TrySkipToType("Bank"));
         Assert.True(this.TrySkipToField("T"));
         Assert.Equal(1500m, this.reader.ReadFieldAsDecimal());
+    }
+
+    [Fact]
+    public void ReadFieldAsDecimal_MixedNumber()
+    {
+        this.TrySkipToType("Prices");
+        this.reader.MoveNext();
+        this.reader.MoveNext();
+        Assert.Equal(33.75m, this.reader.ReadFieldAsDecimal());
+    }
+
+    [Fact]
+    public void ReadFieldAsDecimal_Fraction()
+    {
+        this.TrySkipToType("Prices");
+        this.TrySkipToType("Prices");
+        this.reader.MoveNext();
+        this.reader.MoveNext();
+        Assert.Equal(0.25m, this.reader.ReadFieldAsDecimal());
     }
 
     [Fact]

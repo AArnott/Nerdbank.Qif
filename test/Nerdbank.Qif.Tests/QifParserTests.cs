@@ -58,6 +58,16 @@ public class QifParserTests : TestBase
         ReadField("N", "Nuther Account");
         ReadField("T", "Oth A");
         ReadEndOfRecord();
+        ReadHeader("Type", "Prices");
+        ReadCommaDelimitedValue("ACOM");
+        ReadCommaDelimitedValue("33 3/4");
+        ReadCommaDelimitedValue(" 3/ 4'11");
+        ReadEndOfRecord();
+        ReadHeader("Type", "Prices");
+        ReadCommaDelimitedValue("XLM");
+        ReadCommaDelimitedValue("1/4");
+        ReadCommaDelimitedValue(" 1/21'21");
+        ReadEndOfRecord();
         ReadKind(QifToken.EOF);
 
         void ReadKind(QifToken expectedKind)
@@ -80,6 +90,12 @@ public class QifParserTests : TestBase
         {
             ReadKind(QifToken.Field);
             AssertEqual(expectedHeader, parser.Field.Name);
+            AssertEqual(expectedValue, parser.Field.Value);
+        }
+
+        void ReadCommaDelimitedValue(string expectedValue)
+        {
+            ReadKind(QifToken.CommaDelimitedValue);
             AssertEqual(expectedValue, parser.Field.Value);
         }
 
