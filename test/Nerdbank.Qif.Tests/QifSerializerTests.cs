@@ -581,10 +581,10 @@ TMutual Fund
         const string qifSource = @"""BEXFX"",11.84,"" 3/ 5'15""
 ^
 ";
-        Price price = Read(qifSource, this.serializer.ReadPrice);
-        Assert.Equal("BEXFX", price.Symbol);
-        Assert.Equal(11.84m, price.Value);
-        Assert.Equal(new DateTime(2015, 3, 5), price.Date);
+        Price? price = Read(qifSource, this.serializer.ReadPrice);
+        Assert.Equal("BEXFX", price?.Symbol);
+        Assert.Equal(11.84m, price?.Value);
+        Assert.Equal(new DateTime(2015, 3, 5), price?.Date);
     }
 
     [Fact]
@@ -594,10 +594,10 @@ TMutual Fund
         const string qifSource = @"""BEXFX"",11 3/4,"" 3/ 5'15""
 ^
 ";
-        Price price = Read(qifSource, this.serializer.ReadPrice);
-        Assert.Equal("BEXFX", price.Symbol);
-        Assert.Equal(11.75m, price.Value);
-        Assert.Equal(new DateTime(2015, 3, 5), price.Date);
+        Price? price = Read(qifSource, this.serializer.ReadPrice);
+        Assert.Equal("BEXFX", price?.Symbol);
+        Assert.Equal(11.75m, price?.Value);
+        Assert.Equal(new DateTime(2015, 3, 5), price?.Date);
     }
 
     [Fact]
@@ -818,6 +818,8 @@ Nsecurity1
 Nsecurity2
 ^
 !Type:Prices
+""BEXFX"",,"" 2/ 3'12""
+^
 ""BEXFX"",11.52,"" 2/ 3'13""
 ^
 ""BEXFX"",11.53,"" 2/ 4'13""

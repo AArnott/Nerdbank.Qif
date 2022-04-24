@@ -160,7 +160,11 @@ public class QifSerializer
                         reader.MoveNext();
                         while (reader.Kind == QifToken.CommaDelimitedValue)
                         {
-                            result.Prices.Add(this.ReadPrice(reader));
+                            Price? price = this.ReadPrice(reader);
+                            if (price is not null)
+                            {
+                                result.Prices.Add(price);
+                            }
                         }
                     }
                     else
@@ -805,8 +809,8 @@ public class QifSerializer
     /// Deserializes a <see cref="Price"/> from the given <see cref="QifReader"/>.
     /// </summary>
     /// <param name="reader">The reader to deserialize from.</param>
-    /// <returns>The deserialized record.</returns>
-    public virtual Price ReadPrice(QifReader reader)
+    /// <returns>The deserialized record, if the record is valid. May be <see langword="null" /> if the record is missing critical data such as the price itself.</returns>
+    public virtual Price? ReadPrice(QifReader reader)
     {
         try
         {
@@ -817,6 +821,16 @@ public class QifSerializer
 
             string symbol = reader.ReadFieldAsString();
             reader.MoveNext();
+
+            // Quicken 2022 will export price records without a price in some cases.
+            // It's incorrect to interpret this as $0.00 or anything else. We just have to skip the record.
+            if (reader.Field.Value.Length == 0)
+            {
+                reader.MoveToNext(QifToken.EndOfRecord);
+                reader.ReadEndOfRecord();
+                return null;
+            }
+
             decimal value = reader.ReadFieldAsDecimal();
             reader.MoveNext();
             DateTime date = reader.ReadFieldAsDate();
