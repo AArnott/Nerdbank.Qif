@@ -283,6 +283,8 @@ public class QifSerializer
             string? memo = null;
             string? category = null;
             ImmutableList<string> address = ImmutableList<string>.Empty;
+            string? splitCategory = null;
+            string? splitMemo = null;
             ImmutableList<BankSplit> splits = ImmutableList<BankSplit>.Empty;
 
             foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
@@ -321,19 +323,35 @@ public class QifSerializer
                 }
                 else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitCategory, field.Name))
                 {
-                    splits = splits.Add(new BankSplit(reader.ReadFieldAsString(), null));
+                    splitCategory = reader.ReadFieldAsString();
                 }
                 else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitMemo, field.Name))
                 {
-                    splits = splits.SetItem(splits.Count - 1, splits[^1] with { Memo = reader.ReadFieldAsString() });
+                    splitMemo = reader.ReadFieldAsString();
                 }
                 else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitAmount, field.Name))
                 {
-                    splits = splits.SetItem(splits.Count - 1, splits[^1] with { Amount = reader.ReadFieldAsDecimal() });
+                    // This is always the last field per split.
+                    BankSplit split = new BankSplitAmount(reader.ReadFieldAsDecimal())
+                    {
+                        Memo = splitMemo,
+                        Category = splitCategory,
+                    };
+                    splits = splits.Add(split);
+                    splitMemo = null;
+                    splitCategory = null;
                 }
                 else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitPercent, field.Name))
                 {
-                    splits = splits.SetItem(splits.Count - 1, splits[^1] with { Percentage = reader.ReadFieldAsDecimal() });
+                    // This is always the last field per split.
+                    BankSplit split = new BankSplitPercentage(reader.ReadFieldAsDecimal())
+                    {
+                        Memo = splitMemo,
+                        Category = splitCategory,
+                    };
+                    splits = splits.Add(split);
+                    splitMemo = null;
+                    splitCategory = null;
                 }
             }
 
@@ -362,6 +380,7 @@ public class QifSerializer
     {
         char typeCode = value.Type switch
         {
+            MemorizedTransactionType.Unknown => ' ', // Quicken actually produces this too
             MemorizedTransactionType.ElectronicPayee => MemorizedTransaction.TransactionTypeCodes.ElectronicPayee,
             MemorizedTransactionType.Deposit => MemorizedTransaction.TransactionTypeCodes.Deposit,
             MemorizedTransactionType.Payment => MemorizedTransaction.TransactionTypeCodes.Payment,
@@ -422,6 +441,8 @@ public class QifSerializer
             string? memo = null;
             string? category = null;
             ImmutableList<string> address = ImmutableList<string>.Empty;
+            string? splitCategory = null;
+            string? splitMemo = null;
             ImmutableList<BankSplit> splits = ImmutableList<BankSplit>.Empty;
             DateTime? amortizationFirstPaymentDate = null;
             int? amortizationTotalYearsForLoan = null;
@@ -465,38 +486,61 @@ public class QifSerializer
                 {
                     address = address.Add(reader.ReadFieldAsString());
                 }
-                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitCategory, field.Name))
+                else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitCategory, field.Name))
                 {
-                    splits = splits.Add(new BankSplit(reader.ReadFieldAsString(), null));
+                    splitCategory = reader.ReadFieldAsString();
                 }
-                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitMemo, field.Name))
+                else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitMemo, field.Name))
                 {
-                    splits = splits.SetItem(splits.Count - 1, splits[^1] with { Memo = reader.ReadFieldAsString() });
+                    splitMemo = reader.ReadFieldAsString();
                 }
-                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitAmount, field.Name))
+                else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitAmount, field.Name))
                 {
-                    splits = splits.SetItem(splits.Count - 1, splits[^1] with { Amount = reader.ReadFieldAsDecimal() });
+                    // This is always the last field per split.
+                    BankSplit split = new BankSplitAmount(reader.ReadFieldAsDecimal())
+                    {
+                        Memo = splitMemo,
+                        Category = splitCategory,
+                    };
+                    splits = splits.Add(split);
+                    splitMemo = null;
+                    splitCategory = null;
                 }
                 else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitPercent, field.Name))
                 {
-                    splits = splits.SetItem(splits.Count - 1, splits[^1] with { Percentage = reader.ReadFieldAsDecimal() });
+                    // This is always the last field per split.
+                    BankSplit split = new BankSplitPercentage(reader.ReadFieldAsDecimal())
+                    {
+                        Memo = splitMemo,
+                        Category = splitCategory,
+                    };
+                    splits = splits.Add(split);
+                    splitMemo = null;
+                    splitCategory = null;
                 }
                 else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Type, field.Name))
                 {
-                    if (field.Value.Span.Length != 1)
+                    switch (field.Value.Length)
                     {
-                        throw new InvalidTransactionException("Unexpected length in exception type.");
+                        case 0:
+                            // Quicken has been known to produce records with 'K ' as the type.
+                            // Our parser trims trailing whitespace, leaving an empty field value here.
+                            type = MemorizedTransactionType.Unknown;
+                            break;
+                        case 1:
+                            type = field.Value.Span[0] switch
+                            {
+                                MemorizedTransaction.TransactionTypeCodes.Check => MemorizedTransactionType.Check,
+                                MemorizedTransaction.TransactionTypeCodes.Deposit => MemorizedTransactionType.Deposit,
+                                MemorizedTransaction.TransactionTypeCodes.Payment => MemorizedTransactionType.Payment,
+                                MemorizedTransaction.TransactionTypeCodes.Investment => MemorizedTransactionType.Investment,
+                                MemorizedTransaction.TransactionTypeCodes.ElectronicPayee => MemorizedTransactionType.ElectronicPayee,
+                                _ => throw new InvalidTransactionException("Unsupported memorized transaction type."),
+                            };
+                            break;
+                        default:
+                            throw new InvalidTransactionException("Unexpected length in exception type.");
                     }
-
-                    type = field.Value.Span[0] switch
-                    {
-                        MemorizedTransaction.TransactionTypeCodes.Check => MemorizedTransactionType.Check,
-                        MemorizedTransaction.TransactionTypeCodes.Deposit => MemorizedTransactionType.Deposit,
-                        MemorizedTransaction.TransactionTypeCodes.Payment => MemorizedTransactionType.Payment,
-                        MemorizedTransaction.TransactionTypeCodes.Investment => MemorizedTransactionType.Investment,
-                        MemorizedTransaction.TransactionTypeCodes.ElectronicPayee => MemorizedTransactionType.ElectronicPayee,
-                        _ => throw new InvalidTransactionException("Unsupported memorized transaction type."),
-                    };
                 }
                 else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationInterestRate, field.Name))
                 {

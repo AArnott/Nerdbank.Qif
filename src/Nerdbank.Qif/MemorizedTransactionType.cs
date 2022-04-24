@@ -9,6 +9,11 @@ namespace Nerdbank.Qif;
 public enum MemorizedTransactionType
 {
     /// <summary>
+    /// An unrecognized transaction type.
+    /// </summary>
+    Unknown,
+
+    /// <summary>
     /// A check transaction type.
     /// </summary>
     Check,

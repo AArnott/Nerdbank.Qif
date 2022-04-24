@@ -89,9 +89,9 @@ $500
         Assert.Equal(
             new BankSplit[]
             {
-                new("Split1Cat", "Split1Memo") { Amount = 400 },
-                new("Split2Cat", "Split2Memo") { Amount = 600 },
-                new("Split3Cat", "Split3Memo") { Amount = 500 },
+                new BankSplitAmount(400) { Category = "Split1Cat", Memo = "Split1Memo" },
+                new BankSplitAmount(600) { Category = "Split2Cat", Memo = "Split2Memo" },
+                new BankSplitAmount(500) { Category = "Split3Cat", Memo = "Split3Memo" },
             },
             transaction.Splits);
     }
@@ -121,10 +121,10 @@ $200
         Assert.Equal(
             new BankSplit[]
             {
-                new("Split1Cat", "Split1Memo") { Amount = 400 },
-                new("Split2Cat", "Split2Memo") { Amount = 600 },
-                new("Split3Cat", null) { Amount = 300 },
-                new("Split4Cat", "Split4Memo") { Amount = 200 },
+                new BankSplitAmount(400) { Category = "Split1Cat", Memo = "Split1Memo" },
+                new BankSplitAmount(600) { Category = "Split2Cat", Memo = "Split2Memo" },
+                new BankSplitAmount(300) { Category = "Split3Cat" },
+                new BankSplitAmount(200) { Category = "Split4Cat", Memo = "Split4Memo" },
             },
             transaction.Splits);
     }
@@ -275,9 +275,9 @@ $500
         Assert.Equal(
             new BankSplit[]
             {
-                new("Split1Cat", "Split1Memo") { Amount = 400 },
-                new("Split2Cat", "Split2Memo") { Amount = 600 },
-                new("Split3Cat", "Split3Memo") { Amount = 500 },
+                new BankSplitAmount(400) { Category = "Split1Cat", Memo = "Split1Memo" },
+                new BankSplitAmount(600) { Category = "Split2Cat", Memo = "Split2Memo" },
+                new BankSplitAmount(500) { Category = "Split3Cat", Memo = "Split3Memo" },
             },
             transaction.Splits);
         Assert.Equal(MemorizedTransactionType.Payment, transaction.Type);
@@ -316,10 +316,80 @@ $200
         Assert.Equal(
             new BankSplit[]
             {
-                new("Split1Cat", "Split1Memo") { Amount = 400 },
-                new("Split2Cat", "Split2Memo") { Amount = 600 },
-                new("Split3Cat", null) { Amount = 300 },
-                new("Split4Cat", "Split4Memo") { Amount = 200 },
+                new BankSplitAmount(400) { Category = "Split1Cat", Memo = "Split1Memo" },
+                new BankSplitAmount(600) { Category = "Split2Cat", Memo = "Split2Memo" },
+                new BankSplitAmount(300) { Category = "Split3Cat" },
+                new BankSplitAmount(200) { Category = "Split4Cat", Memo = "Split4Memo" },
+            },
+            transaction.Splits);
+    }
+
+    [Fact]
+    public void ReadMemorizedTransaction_WeirdNonSplit()
+    {
+        // This was actually produced by a Quicken R39.23 (2022) QIF export.
+        // The record 'fixes' itself when modified by the user interactively,
+        // so evidently this only happens with older data.
+        const string qifSource = @"KP
+U-131.76
+T-131.76
+PGeico Insurance
+LAuto:Insurance
+$0.00
+^
+";
+        MemorizedTransaction transaction = Read(qifSource, r => this.serializer.ReadMemorizedTransaction(r));
+        Assert.Equal(
+            new BankSplit[]
+            {
+                new BankSplitAmount(0),
+            },
+            transaction.Splits);
+    }
+
+    [Fact]
+    public void ReadMemorizedTransaction_UnidentifiedType()
+    {
+        // This was actually produced by a Quicken R39.23 (2022) QIF export.
+        // The record 'fixes' itself when modified by the user interactively,
+        // so evidently this only happens with older data.
+        const string qifSource = "K \nU4.50\nT4.50\nPSome Payee\n^\n";
+        MemorizedTransaction transaction = Read(qifSource, r => this.serializer.ReadMemorizedTransaction(r));
+        Assert.Equal(4.50m, transaction.Amount);
+        Assert.Equal("Some Payee", transaction.Payee);
+    }
+
+    [Fact]
+    public void ReadMemorizedTransaction_SplitsWithMissingData()
+    {
+        const string qifSource = @"KD
+U388.01
+T388.01
+Ppayee
+Mmemo
+Ememo1
+$123.45
+SCat2
+$234.56
+$30.00
+SDiv Income
+$5.00
+SInterest Inc
+$0.00
+^
+";
+        MemorizedTransaction transaction = Read(qifSource, r => this.serializer.ReadMemorizedTransaction(r));
+        Assert.Equal(388.01m, transaction.Amount);
+        Assert.Equal("payee", transaction.Payee);
+        Assert.Equal("memo", transaction.Memo);
+        Assert.Equal(
+            new BankSplit[]
+            {
+                new BankSplitAmount(123.45m) { Memo = "memo1" },
+                new BankSplitAmount(234.56m) { Category = "Cat2" },
+                new BankSplitAmount(30),
+                new BankSplitAmount(5) { Category = "Div Income" },
+                new BankSplitAmount(0) { Category = "Interest Inc" },
             },
             transaction.Splits);
     }
@@ -752,7 +822,7 @@ Nsecurity2
             "D02/03/2013\nT35\nN123\nMmemo\nLcat\nCC\nPpayee\nAaddr\nAcity\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new BankTransaction(AccountType.Bank, Date, 35) { Splits = ImmutableList.Create<BankSplit>(new("cat1", "memo1") { Amount = 10 }, new("cat2", "memo2") { Percentage = 15 }) },
+            new BankTransaction(AccountType.Bank, Date, 35) { Splits = ImmutableList.Create<BankSplit>(new BankSplitAmount(10) { Category = "cat1", Memo = "memo1" }, new BankSplitPercentage(15) { Category = "cat2", Memo = "memo2" }) },
             "D02/03/2013\nT35\nScat1\nEmemo1\n$10\nScat2\nEmemo2\n%15\n^\n",
             this.serializer.Write);
     }
@@ -769,7 +839,7 @@ Nsecurity2
             "KD\nD02/03/2013\nT35\nN123\nMmemo\nLcat\nCC\nPpayee\nAaddr\nAcity\n102/04/2013\n230\n313\n46\n50.12\n614\n710000\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new MemorizedTransaction(MemorizedTransactionType.Payment) { Date = Date, Amount = 35, Splits = ImmutableList.Create<BankSplit>(new("cat1", "memo1") { Amount = 10 }, new("cat2", "memo2") { Percentage = 15 }) },
+            new MemorizedTransaction(MemorizedTransactionType.Payment) { Date = Date, Amount = 35, Splits = ImmutableList.Create<BankSplit>(new BankSplitAmount(10) { Category = "cat1", Memo = "memo1" }, new BankSplitPercentage(15) { Category = "cat2", Memo = "memo2" }) },
             "KP\nD02/03/2013\nT35\nScat1\nEmemo1\n$10\nScat2\nEmemo2\n%15\n^\n",
             this.serializer.Write);
     }
