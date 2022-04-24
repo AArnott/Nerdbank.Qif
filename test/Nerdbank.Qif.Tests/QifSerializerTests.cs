@@ -145,6 +145,54 @@ LIncome.Salary
         Assert.Equal("Income.Salary", transaction.Category);
     }
 
+    [Fact]
+    public void ReadBankTransaction_WithTags()
+    {
+        const string qifSource = @"D1/1/2008
+T1500
+LIncome.Salary/tag1:tag2
+^
+";
+        BankTransaction transaction = Read(qifSource, r => this.serializer.ReadBankTransaction(r, AccountType.Bank));
+        Assert.Equal("Income.Salary", transaction.Category);
+        Assert.Equal(ImmutableSortedSet.Create("tag1", "tag2"), transaction.Tags);
+    }
+
+    [Fact]
+    public void ReadBankTransaction_WithTagsNoCategory()
+    {
+        const string qifSource = @"D1/1/2008
+T1500
+L/tag1:tag2
+^
+";
+        BankTransaction transaction = Read(qifSource, r => this.serializer.ReadBankTransaction(r, AccountType.Bank));
+        Assert.Equal(expected: string.Empty, transaction.Category);
+        Assert.Equal(ImmutableSortedSet.Create("tag1", "tag2"), transaction.Tags);
+    }
+
+    [Fact]
+    public void ReadBankTransaction_SplitsWithTags()
+    {
+        const string qifSource = @"D01/01/2005
+U13.00
+T13.00
+SDiv Income/tag1
+$5.00
+SMisc/tag1:tag2
+$8.00
+^
+";
+        BankTransaction transaction = Read(qifSource, r => this.serializer.ReadBankTransaction(r, AccountType.Bank));
+        Assert.Equal(
+            new BankSplit[]
+            {
+                new BankSplitAmount(5) { Category = "Div Income", Tags = ImmutableSortedSet.Create("tag1") },
+                new BankSplitAmount(8.00m) { Category = "Misc", Tags = ImmutableSortedSet.Create("tag1", "tag2") },
+            },
+            transaction.Splits);
+    }
+
     /// <summary>
     /// Quicken may preceed bank transactions with the account details to indicate those transactions belong to that account.
     /// </summary>
@@ -360,6 +408,34 @@ $0.00
     }
 
     [Fact]
+    public void ReadMemorizedTransaction_WithTags()
+    {
+        const string qifSource = @"D1/1/2008
+T1500
+LIncome.Salary/tag1:tag2
+KD
+^
+";
+        MemorizedTransaction transaction = Read(qifSource, r => this.serializer.ReadMemorizedTransaction(r));
+        Assert.Equal("Income.Salary", transaction.Category);
+        Assert.Equal(ImmutableSortedSet.Create("tag1", "tag2"), transaction.Tags);
+    }
+
+    [Fact]
+    public void ReadMemorizedTransaction_WithTagsNoCategory()
+    {
+        const string qifSource = @"D1/1/2008
+T1500
+L/tag1:tag2
+KD
+^
+";
+        MemorizedTransaction transaction = Read(qifSource, r => this.serializer.ReadMemorizedTransaction(r));
+        Assert.Equal(expected: string.Empty, transaction.Category);
+        Assert.Equal(ImmutableSortedSet.Create("tag1", "tag2"), transaction.Tags);
+    }
+
+    [Fact]
     public void ReadMemorizedTransaction_SplitsWithMissingData()
     {
         const string qifSource = @"KD
@@ -390,6 +466,31 @@ $0.00
                 new BankSplitAmount(30),
                 new BankSplitAmount(5) { Category = "Div Income" },
                 new BankSplitAmount(0) { Category = "Interest Inc" },
+            },
+            transaction.Splits);
+    }
+
+    [Fact]
+    public void ReadMemorizedTransaction_SplitsWithTags()
+    {
+        const string qifSource = @"KD
+U20.00
+T20.00
+SDiv Income/tag1
+$5.00
+SMisc/tag1:tag2
+$8.00
+S/tag2
+$7.00
+^
+";
+        MemorizedTransaction transaction = Read(qifSource, r => this.serializer.ReadMemorizedTransaction(r));
+        Assert.Equal(
+            new BankSplit[]
+            {
+                new BankSplitAmount(5) { Category = "Div Income", Tags = ImmutableSortedSet.Create("tag1") },
+                new BankSplitAmount(8) { Category = "Misc", Tags = ImmutableSortedSet.Create("tag1", "tag2") },
+                new BankSplitAmount(7) { Category = string.Empty, Tags = ImmutableSortedSet.Create("tag2") },
             },
             transaction.Splits);
     }
@@ -839,27 +940,37 @@ Ntag2
 
     [Fact]
     public void Write_BankTransaction()
-    {
+{
+        ImmutableSortedSet<string> tags = ImmutableSortedSet.Create("tag1", "tag2");
         this.AssertSerialized(
             new BankTransaction(AccountType.Bank, Date, 35),
             "D02/03/2013\nT35\n^\n",
+            this.serializer.Write);
+        this.AssertSerialized(
+            new BankTransaction(AccountType.Bank, Date, 35) { Tags = tags },
+            "D02/03/2013\nT35\nL/tag1:tag2\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
             new BankTransaction(AccountType.Bank, Date, 35) { Address = ImmutableList.Create("addr", "city"), Category = "cat", ClearedStatus = ClearedState.Cleared, Memo = "memo", Number = "123", Payee = "payee" },
             "D02/03/2013\nT35\nN123\nMmemo\nLcat\nCC\nPpayee\nAaddr\nAcity\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new BankTransaction(AccountType.Bank, Date, 35) { Splits = ImmutableList.Create<BankSplit>(new BankSplitAmount(10) { Category = "cat1", Memo = "memo1" }, new BankSplitPercentage(15) { Category = "cat2", Memo = "memo2" }) },
-            "D02/03/2013\nT35\nScat1\nEmemo1\n$10\nScat2\nEmemo2\n%15\n^\n",
+            new BankTransaction(AccountType.Bank, Date, 35) { Splits = ImmutableList.Create<BankSplit>(new BankSplitAmount(10) { Category = "cat1", Memo = "memo1", Tags = tags }, new BankSplitPercentage(15) { Category = "cat2", Memo = "memo2" }) },
+            "D02/03/2013\nT35\nScat1/tag1:tag2\nEmemo1\n$10\nScat2\nEmemo2\n%15\n^\n",
             this.serializer.Write);
     }
 
     [Fact]
     public void Write_MemorizedTransaction()
     {
+        ImmutableSortedSet<string> tags = ImmutableSortedSet.Create("tag1", "tag2");
         this.AssertSerialized(
             new MemorizedTransaction(MemorizedTransactionType.Check) { Date = Date, Amount = 35 },
             "KC\nD02/03/2013\nT35\n^\n",
+            this.serializer.Write);
+        this.AssertSerialized(
+            new MemorizedTransaction(MemorizedTransactionType.Check) { Tags = tags },
+            "KC\nL/tag1:tag2\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
             new MemorizedTransaction(MemorizedTransactionType.Deposit) { Date = Date, Amount = 35, Address = ImmutableList.Create("addr", "city"), Category = "cat", ClearedStatus = ClearedState.Cleared, Memo = "memo", Number = "123", Payee = "payee", AmortizationCurrentLoanBalance = 14, AmortizationFirstPaymentDate = Date2, AmortizationInterestRate = .12m, AmortizationNumberOfPaymentsAlreadyMade = 13, AmortizationNumberOfPeriodsPerYear = 6, AmortizationOriginalLoanAmount = 10000, AmortizationTotalYearsForLoan = 30 },
@@ -868,6 +979,10 @@ Ntag2
         this.AssertSerialized(
             new MemorizedTransaction(MemorizedTransactionType.Payment) { Date = Date, Amount = 35, Splits = ImmutableList.Create<BankSplit>(new BankSplitAmount(10) { Category = "cat1", Memo = "memo1" }, new BankSplitPercentage(15) { Category = "cat2", Memo = "memo2" }) },
             "KP\nD02/03/2013\nT35\nScat1\nEmemo1\n$10\nScat2\nEmemo2\n%15\n^\n",
+            this.serializer.Write);
+        this.AssertSerialized(
+            new MemorizedTransaction(MemorizedTransactionType.Payment) { Date = Date, Amount = 35, Splits = ImmutableList.Create<BankSplit>(new BankSplitAmount(10) { Category = "cat1", Memo = "memo1", Tags = tags }, new BankSplitPercentage(15) { Category = "cat2", Memo = "memo2" }) },
+            "KP\nD02/03/2013\nT35\nScat1/tag1:tag2\nEmemo1\n$10\nScat2\nEmemo2\n%15\n^\n",
             this.serializer.Write);
     }
 

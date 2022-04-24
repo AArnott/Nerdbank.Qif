@@ -45,6 +45,11 @@ public record MemorizedTransaction(MemorizedTransactionType Type)
     public string? Category { get; init; }
 
     /// <summary>
+    /// Gets the set of tags applied to this transaction.
+    /// </summary>
+    public ImmutableSortedSet<string> Tags { get; init; } = ImmutableSortedSet<string>.Empty;
+
+    /// <summary>
     /// Gets the list of address lines of the payee of this transaction.
     /// </summary>
     /// <remarks>
@@ -91,6 +96,58 @@ public record MemorizedTransaction(MemorizedTransactionType Type)
     /// Gets the amortization total years for loan.
     /// </summary>
     public int? AmortizationTotalYearsForLoan { get; init; }
+
+    /// <inheritdoc/>
+    public virtual bool Equals(MemorizedTransaction? other)
+    {
+        return (object)this == other ||
+            ((object?)other != null
+            && this.EqualityContract == other!.EqualityContract
+            && EqualityComparer<MemorizedTransactionType>.Default.Equals(this.Type, other!.Type)
+            && EqualityComparer<ClearedState>.Default.Equals(this.ClearedStatus, other!.ClearedStatus)
+            && EqualityComparer<string>.Default.Equals(this.Payee, other!.Payee)
+            && EqualityComparer<string>.Default.Equals(this.Memo, other!.Memo)
+            && EqualityComparer<DateTime?>.Default.Equals(this.Date, other!.Date)
+            && EqualityComparer<string>.Default.Equals(this.Number, other!.Number)
+            && EqualityComparer<decimal?>.Default.Equals(this.Amount, other!.Amount)
+            && EqualityComparer<string>.Default.Equals(this.Category, other!.Category)
+            && EqualityComparer<ImmutableSortedSet<string>>.Default.Equals(this.Tags, other!.Tags)
+            && EqualityComparer<ImmutableList<string>>.Default.Equals(this.Address, other!.Address)
+            && EqualityComparer<ImmutableList<BankSplit>>.Default.Equals(this.Splits, other!.Splits)
+            && EqualityComparer<decimal?>.Default.Equals(this.AmortizationCurrentLoanBalance, other!.AmortizationCurrentLoanBalance)
+            && EqualityComparer<DateTime?>.Default.Equals(this.AmortizationFirstPaymentDate, other!.AmortizationFirstPaymentDate)
+            && EqualityComparer<decimal?>.Default.Equals(this.AmortizationInterestRate, other!.AmortizationInterestRate)
+            && EqualityComparer<int?>.Default.Equals(this.AmortizationNumberOfPaymentsAlreadyMade, other!.AmortizationNumberOfPaymentsAlreadyMade)
+            && EqualityComparer<int?>.Default.Equals(this.AmortizationNumberOfPeriodsPerYear, other!.AmortizationNumberOfPeriodsPerYear)
+            && EqualityComparer<decimal?>.Default.Equals(this.AmortizationOriginalLoanAmount, other!.AmortizationOriginalLoanAmount)
+            && EqualityComparer<int?>.Default.Equals(this.AmortizationTotalYearsForLoan, other!.AmortizationTotalYearsForLoan));
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        HashCode hash = default;
+        hash.Add(this.EqualityContract);
+        hash.Add(this.Type);
+        hash.Add(this.ClearedStatus);
+        hash.Add(this.Payee);
+        hash.Add(this.Memo);
+        hash.Add(this.Date);
+        hash.Add(this.Number);
+        hash.Add(this.Amount);
+        hash.Add(this.Category);
+        hash.Add(this.Tags, ByValueCollectionComparer<string>.Default);
+        hash.Add(this.Address, ByValueCollectionComparer<string>.Default);
+        hash.Add(this.Splits, ByValueCollectionComparer<BankSplit>.Default);
+        hash.Add(this.AmortizationCurrentLoanBalance);
+        hash.Add(this.AmortizationFirstPaymentDate);
+        hash.Add(this.AmortizationInterestRate);
+        hash.Add(this.AmortizationNumberOfPaymentsAlreadyMade);
+        hash.Add(this.AmortizationNumberOfPeriodsPerYear);
+        hash.Add(this.AmortizationOriginalLoanAmount);
+        hash.Add(this.AmortizationTotalYearsForLoan);
+        return hash.ToHashCode();
+    }
 
     /// <summary>
     /// The names of each field that may appear in this record.

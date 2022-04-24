@@ -252,7 +252,7 @@ public class QifSerializer
         writer.WriteField(BankTransaction.FieldNames.Amount, value.Amount);
         writer.WriteField(BankTransaction.FieldNames.Number, value.Number);
         writer.WriteField(BankTransaction.FieldNames.Memo, value.Memo);
-        writer.WriteField(BankTransaction.FieldNames.Category, value.Category);
+        writer.WriteCategoryAndTagsField(BankTransaction.FieldNames.Category, value.Category, value.Tags);
         writer.WriteField(BankTransaction.FieldNames.ClearedStatus, value.ClearedStatus);
         writer.WriteField(BankTransaction.FieldNames.Payee, value.Payee);
         foreach (string address in value.Address)
@@ -262,7 +262,7 @@ public class QifSerializer
 
         foreach (BankSplit split in value.Splits)
         {
-            writer.WriteField(BankTransaction.FieldNames.SplitCategory, split.Category);
+            writer.WriteCategoryAndTagsField(BankTransaction.FieldNames.SplitCategory, split.Category, split.Tags);
             writer.WriteField(BankTransaction.FieldNames.SplitMemo, split.Memo);
             writer.WriteField(BankTransaction.FieldNames.SplitAmount, split.Amount);
             writer.WriteField(BankTransaction.FieldNames.SplitPercent, split.Percentage);
@@ -294,7 +294,9 @@ public class QifSerializer
             ImmutableList<string> address = ImmutableList<string>.Empty;
             string? splitCategory = null;
             string? splitMemo = null;
+            ImmutableSortedSet<string> splitTags = ImmutableSortedSet<string>.Empty;
             ImmutableList<BankSplit> splits = ImmutableList<BankSplit>.Empty;
+            ImmutableSortedSet<string> tags = ImmutableSortedSet<string>.Empty;
 
             foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
             {
@@ -324,7 +326,7 @@ public class QifSerializer
                 }
                 else if (QifUtilities.Equals(BankTransaction.FieldNames.Category, field.Name))
                 {
-                    category = reader.ReadFieldAsString();
+                    ParseCategoryAndTags(reader, out category, out tags);
                 }
                 else if (QifUtilities.Equals(BankTransaction.FieldNames.Address, field.Name))
                 {
@@ -332,7 +334,7 @@ public class QifSerializer
                 }
                 else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitCategory, field.Name))
                 {
-                    splitCategory = reader.ReadFieldAsString();
+                    ParseCategoryAndTags(reader, out splitCategory, out splitTags);
                 }
                 else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitMemo, field.Name))
                 {
@@ -345,10 +347,12 @@ public class QifSerializer
                     {
                         Memo = splitMemo,
                         Category = splitCategory,
+                        Tags = splitTags,
                     };
                     splits = splits.Add(split);
                     splitMemo = null;
                     splitCategory = null;
+                    splitTags = splitTags.Clear();
                 }
                 else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitPercent, field.Name))
                 {
@@ -357,10 +361,12 @@ public class QifSerializer
                     {
                         Memo = splitMemo,
                         Category = splitCategory,
+                        Tags = splitTags,
                     };
                     splits = splits.Add(split);
                     splitMemo = null;
                     splitCategory = null;
+                    splitTags = splitTags.Clear();
                 }
             }
 
@@ -376,6 +382,7 @@ public class QifSerializer
                 Category = category,
                 Address = address,
                 Splits = splits,
+                Tags = tags,
             };
         }
         catch (Exception ex)
@@ -403,7 +410,7 @@ public class QifSerializer
         writer.WriteField(BankTransaction.FieldNames.Amount, value.Amount);
         writer.WriteField(BankTransaction.FieldNames.Number, value.Number);
         writer.WriteField(BankTransaction.FieldNames.Memo, value.Memo);
-        writer.WriteField(BankTransaction.FieldNames.Category, value.Category);
+        writer.WriteCategoryAndTagsField(BankTransaction.FieldNames.Category, value.Category, value.Tags);
         writer.WriteField(BankTransaction.FieldNames.ClearedStatus, value.ClearedStatus);
         writer.WriteField(BankTransaction.FieldNames.Payee, value.Payee);
         foreach (string address in value.Address)
@@ -413,7 +420,7 @@ public class QifSerializer
 
         foreach (BankSplit split in value.Splits)
         {
-            writer.WriteField(BankTransaction.FieldNames.SplitCategory, split.Category);
+            writer.WriteCategoryAndTagsField(BankTransaction.FieldNames.SplitCategory, split.Category, split.Tags);
             writer.WriteField(BankTransaction.FieldNames.SplitMemo, split.Memo);
             writer.WriteField(BankTransaction.FieldNames.SplitAmount, split.Amount);
             writer.WriteField(BankTransaction.FieldNames.SplitPercent, split.Percentage);
@@ -452,7 +459,9 @@ public class QifSerializer
             ImmutableList<string> address = ImmutableList<string>.Empty;
             string? splitCategory = null;
             string? splitMemo = null;
+            ImmutableSortedSet<string> splitTags = ImmutableSortedSet<string>.Empty;
             ImmutableList<BankSplit> splits = ImmutableList<BankSplit>.Empty;
+            ImmutableSortedSet<string> tags = ImmutableSortedSet<string>.Empty;
             DateTime? amortizationFirstPaymentDate = null;
             int? amortizationTotalYearsForLoan = null;
             int? amortizationNumberOfPaymentsAlreadyMade = null;
@@ -489,7 +498,7 @@ public class QifSerializer
                 }
                 else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Category, field.Name))
                 {
-                    category = reader.ReadFieldAsString();
+                    ParseCategoryAndTags(reader, out category, out tags);
                 }
                 else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Address, field.Name))
                 {
@@ -497,7 +506,7 @@ public class QifSerializer
                 }
                 else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitCategory, field.Name))
                 {
-                    splitCategory = reader.ReadFieldAsString();
+                    ParseCategoryAndTags(reader, out splitCategory, out splitTags);
                 }
                 else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitMemo, field.Name))
                 {
@@ -510,10 +519,12 @@ public class QifSerializer
                     {
                         Memo = splitMemo,
                         Category = splitCategory,
+                        Tags = splitTags,
                     };
                     splits = splits.Add(split);
                     splitMemo = null;
                     splitCategory = null;
+                    splitTags = splitTags.Clear();
                 }
                 else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitPercent, field.Name))
                 {
@@ -522,10 +533,12 @@ public class QifSerializer
                     {
                         Memo = splitMemo,
                         Category = splitCategory,
+                        Tags = splitTags,
                     };
                     splits = splits.Add(split);
                     splitMemo = null;
                     splitCategory = null;
+                    splitTags = splitTags.Clear();
                 }
                 else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Type, field.Name))
                 {
@@ -592,6 +605,7 @@ public class QifSerializer
                 Category = category,
                 Address = address,
                 Splits = splits,
+                Tags = tags,
                 AmortizationFirstPaymentDate = amortizationFirstPaymentDate,
                 AmortizationTotalYearsForLoan = amortizationTotalYearsForLoan,
                 AmortizationNumberOfPaymentsAlreadyMade = amortizationNumberOfPaymentsAlreadyMade,
@@ -1095,5 +1109,33 @@ public class QifSerializer
             AccountType.Investment => Account.Types.Investment,
             _ => throw new ArgumentException(),
         };
+    }
+
+    private static void ParseCategoryAndTags(QifReader reader, out string? category, out ImmutableSortedSet<string> tags)
+    {
+        tags = ImmutableSortedSet<string>.Empty;
+        int slashIndex = reader.Field.Value.Span.IndexOf('/');
+        if (slashIndex < 0)
+        {
+            // There is just a category here.
+            category = reader.ReadFieldAsString();
+        }
+        else
+        {
+            category = slashIndex == 0 ? string.Empty : reader.Field.Value.Slice(0, slashIndex).ToString();
+
+            ReadOnlyMemory<char> tagsSlice = reader.Field.Value.Slice(slashIndex + 1);
+            int colonIndex;
+            while ((colonIndex = tagsSlice.Span.IndexOf(':')) >= 0)
+            {
+                tags = tags.Add(tagsSlice.Slice(0, colonIndex).ToString());
+                tagsSlice = tagsSlice.Slice(colonIndex + 1);
+            }
+
+            if (tagsSlice.Length > 0)
+            {
+                tags = tags.Add(tagsSlice.ToString());
+            }
+        }
     }
 }

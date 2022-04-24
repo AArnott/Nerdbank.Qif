@@ -241,4 +241,36 @@ public class QifWriter
         this.writer.Write('"');
         this.commaDelimitedValueWritten = true;
     }
+
+    /// <summary>
+    /// Writes a field name and value, where the value is a category name and set of tags.
+    /// </summary>
+    /// <param name="fieldName">The name of the field.</param>
+    /// <param name="category">The category.</param>
+    /// <param name="tags">The tags.</param>
+    public void WriteCategoryAndTagsField(string fieldName, string? category, ImmutableSortedSet<string> tags)
+    {
+        if (tags.IsEmpty)
+        {
+            this.WriteField(fieldName, category);
+        }
+        else
+        {
+            this.writer.Write(fieldName);
+            this.writer.Write(category);
+            this.writer.Write('/');
+            int tagsCounter = 0;
+            foreach (string tag in tags)
+            {
+                if (tagsCounter++ > 0)
+                {
+                    this.writer.Write(':');
+                }
+
+                this.writer.Write(tag);
+            }
+
+            this.writer.WriteLine();
+        }
+    }
 }

@@ -11,6 +11,11 @@ public abstract record BankSplit
     /// <summary>Gets the category of the split.</summary>
     public string? Category { get; init; }
 
+    /// <summary>
+    /// Gets the set of tags applied to this split item.
+    /// </summary>
+    public ImmutableSortedSet<string> Tags { get; init; } = ImmutableSortedSet<string>.Empty;
+
     /// <summary>Gets the memo of the split.</summary>
     public string? Memo { get; init; }
 
@@ -23,6 +28,32 @@ public abstract record BankSplit
     /// Gets the percentage of the split.
     /// </summary>
     public decimal? Percentage { get; init; }
+
+    /// <inheritdoc/>
+    public virtual bool Equals(BankSplit? other)
+    {
+        return (object)this == other ||
+            ((object?)other != null
+            && this.EqualityContract == other!.EqualityContract
+            && EqualityComparer<decimal?>.Default.Equals(this.Amount, other!.Amount)
+            && EqualityComparer<decimal?>.Default.Equals(this.Percentage, other!.Percentage)
+            && EqualityComparer<string?>.Default.Equals(this.Memo, other!.Memo)
+            && EqualityComparer<string?>.Default.Equals(this.Category, other!.Category)
+            && ByValueCollectionComparer<string>.Default.Equals(this.Tags, other!.Tags));
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        HashCode hash = default;
+        hash.Add(this.EqualityContract);
+        hash.Add(this.Amount);
+        hash.Add(this.Percentage);
+        hash.Add(this.Memo);
+        hash.Add(this.Category);
+        hash.Add(this.Tags, ByValueCollectionComparer<string>.Default);
+        return hash.ToHashCode();
+    }
 }
 
 /// <summary>
@@ -34,10 +65,7 @@ public record BankSplitAmount : BankSplit
     /// Initializes a new instance of the <see cref="BankSplitAmount"/> class.
     /// </summary>
     /// <param name="amount">The amount of the split.</param>
-    public BankSplitAmount(decimal amount) => base.Amount = amount;
-
-    /// <inheritdoc cref="BankSplit.Amount"/>
-    public new decimal Amount => base.Amount!.Value;
+    public BankSplitAmount(decimal amount) => this.Amount = amount;
 }
 
 /// <summary>
@@ -49,8 +77,5 @@ public record BankSplitPercentage : BankSplit
     /// Initializes a new instance of the <see cref="BankSplitPercentage"/> class.
     /// </summary>
     /// <param name="percentage">The percent of the split.</param>
-    public BankSplitPercentage(decimal percentage) => base.Percentage = percentage;
-
-    /// <inheritdoc cref="BankSplit.Percentage"/>
-    public new decimal Percentage => base.Percentage!.Value;
+    public BankSplitPercentage(decimal percentage) => this.Percentage = percentage;
 }

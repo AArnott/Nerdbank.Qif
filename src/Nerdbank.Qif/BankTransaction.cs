@@ -22,6 +22,11 @@ public partial record BankTransaction(AccountType AccountType, DateTime Date, de
     public string? Category { get; init; }
 
     /// <summary>
+    /// Gets the set of tags applied to this transaction.
+    /// </summary>
+    public ImmutableSortedSet<string> Tags { get; init; } = ImmutableSortedSet<string>.Empty;
+
+    /// <summary>
     /// Gets the list of address lines of the payee of this transaction.
     /// </summary>
     /// <remarks>
@@ -47,6 +52,7 @@ public partial record BankTransaction(AccountType AccountType, DateTime Date, de
             && EqualityComparer<string?>.Default.Equals(this.Payee, other!.Payee)
             && EqualityComparer<string?>.Default.Equals(this.Memo, other!.Memo)
             && EqualityComparer<string?>.Default.Equals(this.Category, other!.Category)
+            && ByValueCollectionComparer<string>.Default.Equals(this.Tags, other!.Tags)
             && ByValueCollectionComparer<string>.Default.Equals(this.Address, other!.Address)
             && ByValueCollectionComparer<BankSplit>.Default.Equals(this.Splits, other!.Splits));
     }
@@ -63,6 +69,7 @@ public partial record BankTransaction(AccountType AccountType, DateTime Date, de
         hash.Add(this.Payee);
         hash.Add(this.Memo);
         hash.Add(this.Category);
+        hash.Add(this.Tags, ByValueCollectionComparer<string>.Default);
         hash.Add(this.Address, ByValueCollectionComparer<string>.Default);
         hash.Add(this.Splits, ByValueCollectionComparer<BankSplit>.Default);
         return hash.ToHashCode();
