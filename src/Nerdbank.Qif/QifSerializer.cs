@@ -181,7 +181,7 @@ public class QifSerializer
         }
         catch (Exception ex)
         {
-            throw new InvalidTransactionException($"Error reading record at or just above line {reader.LineNumber}.", ex);
+            throw new InvalidTransactionException($"Error reading document at or just above line {reader.LineNumber}.", ex);
         }
         finally
         {
@@ -208,31 +208,57 @@ public class QifSerializer
     /// <returns>The deserialized record.</returns>
     public virtual Class ReadClass(QifReader reader)
     {
-        string? name = null;
-        string? description = null;
-
-        foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
+        try
         {
-            if (QifUtilities.Equals(Class.FieldNames.Name, field.Name))
+            string? name = null;
+            string? description = null;
+
+            foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
             {
-                name = reader.ReadFieldAsString();
+                if (QifUtilities.Equals(Class.FieldNames.Name, field.Name))
+                {
+                    name = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(Class.FieldNames.Description, field.Name))
+                {
+                    description = reader.ReadFieldAsString();
+                }
             }
-            else if (QifUtilities.Equals(Class.FieldNames.Description, field.Name))
+
+            return new(ValueOrThrow(name, Class.FieldNames.Name))
             {
-                description = reader.ReadFieldAsString();
-            }
+                Description = description,
+            };
         }
-
-        return new(ValueOrThrow(name, Class.FieldNames.Name))
+        catch (Exception ex)
         {
-            Description = description,
-        };
+            throw new InvalidTransactionException($"Error reading class record at or just above line {reader.LineNumber}.", ex);
+        }
     }
 
     /// <inheritdoc cref="Write(QifWriter, Class)" />
     public virtual void Write(QifWriter writer, BankTransaction value)
     {
-        WriteBankTransactionHelper(writer, value);
+        writer.WriteField(BankTransaction.FieldNames.Date, value.Date);
+        writer.WriteField(BankTransaction.FieldNames.Amount, value.Amount);
+        writer.WriteField(BankTransaction.FieldNames.Number, value.Number);
+        writer.WriteField(BankTransaction.FieldNames.Memo, value.Memo);
+        writer.WriteField(BankTransaction.FieldNames.Category, value.Category);
+        writer.WriteField(BankTransaction.FieldNames.ClearedStatus, value.ClearedStatus);
+        writer.WriteField(BankTransaction.FieldNames.Payee, value.Payee);
+        foreach (string address in value.Address)
+        {
+            writer.WriteField(BankTransaction.FieldNames.Address, address);
+        }
+
+        foreach (BankSplit split in value.Splits)
+        {
+            writer.WriteField(BankTransaction.FieldNames.SplitCategory, split.Category);
+            writer.WriteField(BankTransaction.FieldNames.SplitMemo, split.Memo);
+            writer.WriteField(BankTransaction.FieldNames.SplitAmount, split.Amount);
+            writer.WriteField(BankTransaction.FieldNames.SplitPercent, split.Percentage);
+        }
+
         writer.WriteEndOfRecord();
     }
 
@@ -247,81 +273,88 @@ public class QifSerializer
     /// </devremarks>
     public virtual BankTransaction ReadBankTransaction(QifReader reader, AccountType type)
     {
-        DateTime? date = null;
-        decimal? amount = null;
-        ClearedState clearedStatus = ClearedState.None;
-        string? number = null;
-        string? payee = null;
-        string? memo = null;
-        string? category = null;
-        ImmutableList<string> address = ImmutableList<string>.Empty;
-        ImmutableList<BankSplit> splits = ImmutableList<BankSplit>.Empty;
-
-        foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
+        try
         {
-            if (QifUtilities.Equals(BankTransaction.FieldNames.Date, field.Name))
+            DateTime? date = null;
+            decimal? amount = null;
+            ClearedState clearedStatus = ClearedState.None;
+            string? number = null;
+            string? payee = null;
+            string? memo = null;
+            string? category = null;
+            ImmutableList<string> address = ImmutableList<string>.Empty;
+            ImmutableList<BankSplit> splits = ImmutableList<BankSplit>.Empty;
+
+            foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
             {
-                date = reader.ReadFieldAsDate();
+                if (QifUtilities.Equals(BankTransaction.FieldNames.Date, field.Name))
+                {
+                    date = reader.ReadFieldAsDate();
+                }
+                else if (QifUtilities.Equals(BankTransaction.FieldNames.Amount, field.Name))
+                {
+                    amount = reader.ReadFieldAsDecimal();
+                }
+                else if (QifUtilities.Equals(BankTransaction.FieldNames.ClearedStatus, field.Name))
+                {
+                    clearedStatus = reader.ReadFieldAsClearedState();
+                }
+                else if (QifUtilities.Equals(BankTransaction.FieldNames.Number, field.Name))
+                {
+                    number = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(BankTransaction.FieldNames.Payee, field.Name))
+                {
+                    payee = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(BankTransaction.FieldNames.Memo, field.Name))
+                {
+                    memo = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(BankTransaction.FieldNames.Category, field.Name))
+                {
+                    category = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(BankTransaction.FieldNames.Address, field.Name))
+                {
+                    address = address.Add(reader.ReadFieldAsString());
+                }
+                else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitCategory, field.Name))
+                {
+                    splits = splits.Add(new BankSplit(reader.ReadFieldAsString(), null));
+                }
+                else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitMemo, field.Name))
+                {
+                    splits = splits.SetItem(splits.Count - 1, splits[^1] with { Memo = reader.ReadFieldAsString() });
+                }
+                else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitAmount, field.Name))
+                {
+                    splits = splits.SetItem(splits.Count - 1, splits[^1] with { Amount = reader.ReadFieldAsDecimal() });
+                }
+                else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitPercent, field.Name))
+                {
+                    splits = splits.SetItem(splits.Count - 1, splits[^1] with { Percentage = reader.ReadFieldAsDecimal() });
+                }
             }
-            else if (QifUtilities.Equals(BankTransaction.FieldNames.Amount, field.Name))
+
+            return new(
+                type,
+                ValueOrThrow(date, BankTransaction.FieldNames.Date),
+                ValueOrThrow(amount, BankTransaction.FieldNames.Amount))
             {
-                amount = reader.ReadFieldAsDecimal();
-            }
-            else if (QifUtilities.Equals(BankTransaction.FieldNames.ClearedStatus, field.Name))
-            {
-                clearedStatus = reader.ReadFieldAsClearedState();
-            }
-            else if (QifUtilities.Equals(BankTransaction.FieldNames.Number, field.Name))
-            {
-                number = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(BankTransaction.FieldNames.Payee, field.Name))
-            {
-                payee = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(BankTransaction.FieldNames.Memo, field.Name))
-            {
-                memo = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(BankTransaction.FieldNames.Category, field.Name))
-            {
-                category = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(BankTransaction.FieldNames.Address, field.Name))
-            {
-                address = address.Add(reader.ReadFieldAsString());
-            }
-            else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitCategory, field.Name))
-            {
-                splits = splits.Add(new BankSplit(reader.ReadFieldAsString(), null));
-            }
-            else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitMemo, field.Name))
-            {
-                splits = splits.SetItem(splits.Count - 1, splits[^1] with { Memo = reader.ReadFieldAsString() });
-            }
-            else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitAmount, field.Name))
-            {
-                splits = splits.SetItem(splits.Count - 1, splits[^1] with { Amount = reader.ReadFieldAsDecimal() });
-            }
-            else if (QifUtilities.Equals(BankTransaction.FieldNames.SplitPercent, field.Name))
-            {
-                splits = splits.SetItem(splits.Count - 1, splits[^1] with { Percentage = reader.ReadFieldAsDecimal() });
-            }
+                ClearedStatus = clearedStatus,
+                Number = number,
+                Payee = payee,
+                Memo = memo,
+                Category = category,
+                Address = address,
+                Splits = splits,
+            };
         }
-
-        return new(
-            type,
-            ValueOrThrow(date, BankTransaction.FieldNames.Date),
-            ValueOrThrow(amount, BankTransaction.FieldNames.Amount))
+        catch (Exception ex)
         {
-            ClearedStatus = clearedStatus,
-            Number = number,
-            Payee = payee,
-            Memo = memo,
-            Category = category,
-            Address = address,
-            Splits = splits,
-        };
+            throw new InvalidTransactionException($"Error reading bank transaction record at or just above line {reader.LineNumber}.", ex);
+        }
     }
 
     /// <inheritdoc cref="Write(QifWriter, Class)" />
@@ -337,7 +370,27 @@ public class QifSerializer
             _ => throw new InvalidTransactionException("Unsupported type."),
         };
         writer.WriteField(MemorizedTransaction.FieldNames.Type, typeCode);
-        WriteBankTransactionHelper(writer, value);
+
+        writer.WriteField(BankTransaction.FieldNames.Date, value.Date);
+        writer.WriteField(BankTransaction.FieldNames.Amount, value.Amount);
+        writer.WriteField(BankTransaction.FieldNames.Number, value.Number);
+        writer.WriteField(BankTransaction.FieldNames.Memo, value.Memo);
+        writer.WriteField(BankTransaction.FieldNames.Category, value.Category);
+        writer.WriteField(BankTransaction.FieldNames.ClearedStatus, value.ClearedStatus);
+        writer.WriteField(BankTransaction.FieldNames.Payee, value.Payee);
+        foreach (string address in value.Address)
+        {
+            writer.WriteField(BankTransaction.FieldNames.Address, address);
+        }
+
+        foreach (BankSplit split in value.Splits)
+        {
+            writer.WriteField(BankTransaction.FieldNames.SplitCategory, split.Category);
+            writer.WriteField(BankTransaction.FieldNames.SplitMemo, split.Memo);
+            writer.WriteField(BankTransaction.FieldNames.SplitAmount, split.Amount);
+            writer.WriteField(BankTransaction.FieldNames.SplitPercent, split.Percentage);
+        }
+
         writer.WriteField(MemorizedTransaction.FieldNames.AmortizationFirstPaymentDate, value.AmortizationFirstPaymentDate);
         writer.WriteField(MemorizedTransaction.FieldNames.AmortizationTotalYearsForLoan, value.AmortizationTotalYearsForLoan);
         writer.WriteField(MemorizedTransaction.FieldNames.AmortizationNumberOfPaymentsAlreadyMade, value.AmortizationNumberOfPaymentsAlreadyMade);
@@ -358,167 +411,173 @@ public class QifSerializer
     /// </devremarks>
     public virtual MemorizedTransaction ReadMemorizedTransaction(QifReader reader)
     {
-        MemorizedTransactionType? type = null;
-        DateTime? date = null;
-        decimal? amount = null;
-        ClearedState clearedStatus = ClearedState.None;
-        string? number = null;
-        string? payee = null;
-        string? memo = null;
-        string? category = null;
-        ImmutableList<string> address = ImmutableList<string>.Empty;
-        ImmutableList<string> splitCategories = ImmutableList<string>.Empty;
-        ImmutableList<string> splitMemos = ImmutableList<string>.Empty;
-        ImmutableList<decimal> splitAmounts = ImmutableList<decimal>.Empty;
-        ImmutableList<decimal> splitPercentage = ImmutableList<decimal>.Empty;
-        DateTime? amortizationFirstPaymentDate = null;
-        int? amortizationTotalYearsForLoan = null;
-        int? amortizationNumberOfPaymentsAlreadyMade = null;
-        int? amortizationNumberOfPeriodsPerYear = null;
-        decimal? amortizationInterestRate = null;
-        decimal? amortizationCurrentLoanBalance = null;
-        decimal? amortizationOriginalLoanAmount = null;
-
-        foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
+        try
         {
-            if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Date, field.Name))
+            MemorizedTransactionType? type = null;
+            DateTime? date = null;
+            decimal? amount = null;
+            ClearedState clearedStatus = ClearedState.None;
+            string? number = null;
+            string? payee = null;
+            string? memo = null;
+            string? category = null;
+            ImmutableList<string> address = ImmutableList<string>.Empty;
+            ImmutableList<string> splitCategories = ImmutableList<string>.Empty;
+            ImmutableList<string> splitMemos = ImmutableList<string>.Empty;
+            ImmutableList<decimal> splitAmounts = ImmutableList<decimal>.Empty;
+            ImmutableList<decimal> splitPercentage = ImmutableList<decimal>.Empty;
+            DateTime? amortizationFirstPaymentDate = null;
+            int? amortizationTotalYearsForLoan = null;
+            int? amortizationNumberOfPaymentsAlreadyMade = null;
+            int? amortizationNumberOfPeriodsPerYear = null;
+            decimal? amortizationInterestRate = null;
+            decimal? amortizationCurrentLoanBalance = null;
+            decimal? amortizationOriginalLoanAmount = null;
+
+            foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
             {
-                date = reader.ReadFieldAsDate();
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Amount, field.Name))
-            {
-                amount = reader.ReadFieldAsDecimal();
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.ClearedStatus, field.Name))
-            {
-                clearedStatus = reader.ReadFieldAsClearedState();
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Number, field.Name))
-            {
-                number = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Payee, field.Name))
-            {
-                payee = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Memo, field.Name))
-            {
-                memo = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Category, field.Name))
-            {
-                category = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Address, field.Name))
-            {
-                address = address.Add(reader.ReadFieldAsString());
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitCategory, field.Name))
-            {
-                splitCategories = splitCategories.Add(reader.ReadFieldAsString());
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitMemo, field.Name))
-            {
-                splitMemos = splitMemos.Add(reader.ReadFieldAsString());
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitAmount, field.Name))
-            {
-                splitAmounts = splitAmounts.Add(reader.ReadFieldAsDecimal());
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitPercent, field.Name))
-            {
-                splitPercentage = splitPercentage.Add(reader.ReadFieldAsDecimal());
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Type, field.Name))
-            {
-                if (field.Value.Span.Length != 1)
+                if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Date, field.Name))
                 {
-                    throw new InvalidTransactionException("Unexpected length in exception type.");
+                    date = reader.ReadFieldAsDate();
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Amount, field.Name))
+                {
+                    amount = reader.ReadFieldAsDecimal();
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.ClearedStatus, field.Name))
+                {
+                    clearedStatus = reader.ReadFieldAsClearedState();
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Number, field.Name))
+                {
+                    number = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Payee, field.Name))
+                {
+                    payee = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Memo, field.Name))
+                {
+                    memo = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Category, field.Name))
+                {
+                    category = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Address, field.Name))
+                {
+                    address = address.Add(reader.ReadFieldAsString());
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitCategory, field.Name))
+                {
+                    splitCategories = splitCategories.Add(reader.ReadFieldAsString());
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitMemo, field.Name))
+                {
+                    splitMemos = splitMemos.Add(reader.ReadFieldAsString());
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitAmount, field.Name))
+                {
+                    splitAmounts = splitAmounts.Add(reader.ReadFieldAsDecimal());
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitPercent, field.Name))
+                {
+                    splitPercentage = splitPercentage.Add(reader.ReadFieldAsDecimal());
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Type, field.Name))
+                {
+                    if (field.Value.Span.Length != 1)
+                    {
+                        throw new InvalidTransactionException("Unexpected length in exception type.");
+                    }
+
+                    type = field.Value.Span[0] switch
+                    {
+                        MemorizedTransaction.TransactionTypeCodes.Check => MemorizedTransactionType.Check,
+                        MemorizedTransaction.TransactionTypeCodes.Deposit => MemorizedTransactionType.Deposit,
+                        MemorizedTransaction.TransactionTypeCodes.Payment => MemorizedTransactionType.Payment,
+                        MemorizedTransaction.TransactionTypeCodes.Investment => MemorizedTransactionType.Investment,
+                        MemorizedTransaction.TransactionTypeCodes.ElectronicPayee => MemorizedTransactionType.ElectronicPayee,
+                        _ => throw new InvalidTransactionException("Unsupported memorized transaction type."),
+                    };
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationInterestRate, field.Name))
+                {
+                    amortizationInterestRate = reader.ReadFieldAsDecimal();
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationCurrentLoanBalance, field.Name))
+                {
+                    amortizationCurrentLoanBalance = reader.ReadFieldAsDecimal();
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationFirstPaymentDate, field.Name))
+                {
+                    amortizationFirstPaymentDate = reader.ReadFieldAsDate();
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationNumberOfPaymentsAlreadyMade, field.Name))
+                {
+                    amortizationNumberOfPaymentsAlreadyMade = (int)reader.ReadFieldAsInt64();
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationNumberOfPeriodsPerYear, field.Name))
+                {
+                    amortizationNumberOfPeriodsPerYear = (int)reader.ReadFieldAsInt64();
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationTotalYearsForLoan, field.Name))
+                {
+                    amortizationTotalYearsForLoan = (int)reader.ReadFieldAsInt64();
+                }
+                else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationOriginalLoanAmount, field.Name))
+                {
+                    amortizationOriginalLoanAmount = (int)reader.ReadFieldAsInt64();
+                }
+            }
+
+            if (splitCategories.Count != splitMemos.Count ||
+                splitCategories.Count != Math.Max(splitAmounts.Count, splitPercentage.Count))
+            {
+                throw new InvalidTransactionException("Inconsistent number of fields for splits.");
+            }
+
+            ImmutableList<BankSplit> splits = ImmutableList<BankSplit>.Empty;
+            if (splitCategories.Count > 0)
+            {
+                var splitsBuilder = splits.ToBuilder();
+                for (int i = 0; i < splitCategories.Count; i++)
+                {
+                    BankSplit split = new(splitCategories[i], splitMemos[i])
+                    {
+                        Amount = splitAmounts.Count > i ? splitAmounts[i] : null,
+                        Percentage = splitPercentage.Count > i ? splitPercentage[i] : null,
+                    };
+                    splitsBuilder.Add(split);
                 }
 
-                type = field.Value.Span[0] switch
-                {
-                    MemorizedTransaction.TransactionTypeCodes.Check => MemorizedTransactionType.Check,
-                    MemorizedTransaction.TransactionTypeCodes.Deposit => MemorizedTransactionType.Deposit,
-                    MemorizedTransaction.TransactionTypeCodes.Payment => MemorizedTransactionType.Payment,
-                    MemorizedTransaction.TransactionTypeCodes.Investment => MemorizedTransactionType.Investment,
-                    MemorizedTransaction.TransactionTypeCodes.ElectronicPayee => MemorizedTransactionType.ElectronicPayee,
-                    _ => throw new InvalidTransactionException("Unsupported memorized transaction type."),
-                };
+                splits = splitsBuilder.ToImmutable();
             }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationInterestRate, field.Name))
+
+            return new(ValueOrThrow(type, MemorizedTransaction.FieldNames.Type))
             {
-                amortizationInterestRate = reader.ReadFieldAsDecimal();
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationCurrentLoanBalance, field.Name))
-            {
-                amortizationCurrentLoanBalance = reader.ReadFieldAsDecimal();
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationFirstPaymentDate, field.Name))
-            {
-                amortizationFirstPaymentDate = reader.ReadFieldAsDate();
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationNumberOfPaymentsAlreadyMade, field.Name))
-            {
-                amortizationNumberOfPaymentsAlreadyMade = (int)reader.ReadFieldAsInt64();
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationNumberOfPeriodsPerYear, field.Name))
-            {
-                amortizationNumberOfPeriodsPerYear = (int)reader.ReadFieldAsInt64();
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationTotalYearsForLoan, field.Name))
-            {
-                amortizationTotalYearsForLoan = (int)reader.ReadFieldAsInt64();
-            }
-            else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.AmortizationOriginalLoanAmount, field.Name))
-            {
-                amortizationOriginalLoanAmount = (int)reader.ReadFieldAsInt64();
-            }
+                Date = date,
+                Amount = amount,
+                ClearedStatus = clearedStatus,
+                Number = number,
+                Payee = payee,
+                Memo = memo,
+                Category = category,
+                Address = address,
+                Splits = splits,
+                AmortizationFirstPaymentDate = amortizationFirstPaymentDate,
+                AmortizationTotalYearsForLoan = amortizationTotalYearsForLoan,
+                AmortizationNumberOfPaymentsAlreadyMade = amortizationNumberOfPaymentsAlreadyMade,
+                AmortizationNumberOfPeriodsPerYear = amortizationNumberOfPeriodsPerYear,
+                AmortizationInterestRate = amortizationInterestRate,
+                AmortizationCurrentLoanBalance = amortizationCurrentLoanBalance,
+                AmortizationOriginalLoanAmount = amortizationOriginalLoanAmount,
+            };
         }
-
-        if (splitCategories.Count != splitMemos.Count ||
-            splitCategories.Count != Math.Max(splitAmounts.Count, splitPercentage.Count))
+        catch (Exception ex)
         {
-            throw new InvalidTransactionException("Inconsistent number of fields for splits.");
+            throw new InvalidTransactionException($"Error reading memorized transaction record at or just above line {reader.LineNumber}.", ex);
         }
-
-        ImmutableList<BankSplit> splits = ImmutableList<BankSplit>.Empty;
-        if (splitCategories.Count > 0)
-        {
-            var splitsBuilder = splits.ToBuilder();
-            for (int i = 0; i < splitCategories.Count; i++)
-            {
-                BankSplit split = new(splitCategories[i], splitMemos[i])
-                {
-                    Amount = splitAmounts.Count > i ? splitAmounts[i] : null,
-                    Percentage = splitPercentage.Count > i ? splitPercentage[i] : null,
-                };
-                splitsBuilder.Add(split);
-            }
-
-            splits = splitsBuilder.ToImmutable();
-        }
-
-        return new(
-            ValueOrThrow(type, MemorizedTransaction.FieldNames.Type),
-            ValueOrThrow(date, MemorizedTransaction.FieldNames.Date),
-            ValueOrThrow(amount, MemorizedTransaction.FieldNames.Amount))
-        {
-            ClearedStatus = clearedStatus,
-            Number = number,
-            Payee = payee,
-            Memo = memo,
-            Category = category,
-            Address = address,
-            Splits = splits,
-            AmortizationFirstPaymentDate = amortizationFirstPaymentDate,
-            AmortizationTotalYearsForLoan = amortizationTotalYearsForLoan,
-            AmortizationNumberOfPaymentsAlreadyMade = amortizationNumberOfPaymentsAlreadyMade,
-            AmortizationNumberOfPeriodsPerYear = amortizationNumberOfPeriodsPerYear,
-            AmortizationInterestRate = amortizationInterestRate,
-            AmortizationCurrentLoanBalance = amortizationCurrentLoanBalance,
-            AmortizationOriginalLoanAmount = amortizationOriginalLoanAmount,
-        };
     }
 
     /// <inheritdoc cref="Write(QifWriter, Class)" />
@@ -541,55 +600,62 @@ public class QifSerializer
     /// <returns>The deserialized record.</returns>
     public virtual Category ReadCategory(QifReader reader)
     {
-        string? name = null;
-        string? description = null;
-        bool taxRelated = false;
-        bool incomeCategory = false;
-        bool expenseCategory = false;
-        string? taxSchedule = null;
-        decimal? budgetAmount = null;
-
-        foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
+        try
         {
-            if (QifUtilities.Equals(Category.FieldNames.Name, reader.Field.Name))
+            string? name = null;
+            string? description = null;
+            bool taxRelated = false;
+            bool incomeCategory = false;
+            bool expenseCategory = false;
+            string? taxSchedule = null;
+            decimal? budgetAmount = null;
+
+            foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
             {
-                name = reader.ReadFieldAsString();
+                if (QifUtilities.Equals(Category.FieldNames.Name, reader.Field.Name))
+                {
+                    name = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(Category.FieldNames.Description, reader.Field.Name))
+                {
+                    description = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(Category.FieldNames.TaxSchedule, reader.Field.Name))
+                {
+                    taxSchedule = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(Category.FieldNames.TaxRelated, reader.Field.Name))
+                {
+                    taxRelated = true;
+                }
+                else if (QifUtilities.Equals(Category.FieldNames.IncomeCategory, reader.Field.Name))
+                {
+                    incomeCategory = true;
+                }
+                else if (QifUtilities.Equals(Category.FieldNames.ExpenseCategory, reader.Field.Name))
+                {
+                    expenseCategory = true;
+                }
+                else if (QifUtilities.Equals(Category.FieldNames.BudgetAmount, reader.Field.Name))
+                {
+                    budgetAmount = reader.ReadFieldAsDecimal();
+                }
             }
-            else if (QifUtilities.Equals(Category.FieldNames.Description, reader.Field.Name))
+
+            return new(ValueOrThrow(name, Category.FieldNames.Name))
             {
-                description = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(Category.FieldNames.TaxSchedule, reader.Field.Name))
-            {
-                taxSchedule = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(Category.FieldNames.TaxRelated, reader.Field.Name))
-            {
-                taxRelated = true;
-            }
-            else if (QifUtilities.Equals(Category.FieldNames.IncomeCategory, reader.Field.Name))
-            {
-                incomeCategory = true;
-            }
-            else if (QifUtilities.Equals(Category.FieldNames.ExpenseCategory, reader.Field.Name))
-            {
-                expenseCategory = true;
-            }
-            else if (QifUtilities.Equals(Category.FieldNames.BudgetAmount, reader.Field.Name))
-            {
-                budgetAmount = reader.ReadFieldAsDecimal();
-            }
+                Description = description,
+                TaxRelated = taxRelated,
+                IncomeCategory = incomeCategory,
+                ExpenseCategory = expenseCategory,
+                TaxSchedule = taxSchedule,
+                BudgetAmount = budgetAmount,
+            };
         }
-
-        return new(ValueOrThrow(name, Category.FieldNames.Name))
+        catch (Exception ex)
         {
-            Description = description,
-            TaxRelated = taxRelated,
-            IncomeCategory = incomeCategory,
-            ExpenseCategory = expenseCategory,
-            TaxSchedule = taxSchedule,
-            BudgetAmount = budgetAmount,
-        };
+            throw new InvalidTransactionException($"Error reading category record at or just above line {reader.LineNumber}.", ex);
+        }
     }
 
     /// <inheritdoc cref="Write(QifWriter, Security)" />
@@ -608,31 +674,38 @@ public class QifSerializer
     /// <returns>The deserialized record.</returns>
     public virtual Security ReadSecurity(QifReader reader)
     {
-        string? name = null;
-        string? symbol = null;
-        string? type = null;
-
-        foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
+        try
         {
-            if (QifUtilities.Equals(Security.FieldNames.Name, reader.Field.Name))
+            string? name = null;
+            string? symbol = null;
+            string? type = null;
+
+            foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
             {
-                name = reader.ReadFieldAsString();
+                if (QifUtilities.Equals(Security.FieldNames.Name, reader.Field.Name))
+                {
+                    name = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(Security.FieldNames.Symbol, reader.Field.Name))
+                {
+                    symbol = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(Security.FieldNames.Type, reader.Field.Name))
+                {
+                    type = reader.ReadFieldAsString();
+                }
             }
-            else if (QifUtilities.Equals(Security.FieldNames.Symbol, reader.Field.Name))
+
+            return new(ValueOrThrow(name, Security.FieldNames.Name))
             {
-                symbol = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(Security.FieldNames.Type, reader.Field.Name))
-            {
-                type = reader.ReadFieldAsString();
-            }
+                Symbol = symbol,
+                Type = type,
+            };
         }
-
-        return new(ValueOrThrow(name, Security.FieldNames.Name))
+        catch (Exception ex)
         {
-            Symbol = symbol,
-            Type = type,
-        };
+            throw new InvalidTransactionException($"Error reading security record at or just above line {reader.LineNumber}.", ex);
+        }
     }
 
     /// <inheritdoc cref="Write(QifWriter, Price)" />
@@ -651,21 +724,28 @@ public class QifSerializer
     /// <returns>The deserialized record.</returns>
     public virtual Price ReadPrice(QifReader reader)
     {
-        if (reader.Kind == QifToken.Header)
+        try
         {
+            if (reader.Kind == QifToken.Header)
+            {
+                reader.MoveNext();
+            }
+
+            string symbol = reader.ReadFieldAsString();
             reader.MoveNext();
+            decimal value = reader.ReadFieldAsDecimal();
+            reader.MoveNext();
+            DateTime date = reader.ReadFieldAsDate();
+
+            reader.MoveToNext(QifToken.EndOfRecord);
+            reader.ReadEndOfRecord();
+
+            return new(symbol, value, date);
         }
-
-        string symbol = reader.ReadFieldAsString();
-        reader.MoveNext();
-        decimal value = reader.ReadFieldAsDecimal();
-        reader.MoveNext();
-        DateTime date = reader.ReadFieldAsDate();
-
-        reader.MoveToNext(QifToken.EndOfRecord);
-        reader.ReadEndOfRecord();
-
-        return new(symbol, value, date);
+        catch (Exception ex)
+        {
+            throw new InvalidTransactionException($"Error reading price record at or just above line {reader.LineNumber}.", ex);
+        }
     }
 
     /// <inheritdoc cref="Write(QifWriter, Class)" />
@@ -693,86 +773,93 @@ public class QifSerializer
     /// <returns>The deserialized record.</returns>
     public virtual InvestmentTransaction ReadInvestmentTransaction(QifReader reader)
     {
-        DateTime? date = null;
-        ClearedState clearedStatus = ClearedState.None;
-        string? memo = null;
-        string? action = null;
-        decimal? commission = null;
-        decimal? price = null;
-        decimal? quantity = null;
-        string? security = null;
-        string? payee = null;
-        decimal? transactionAmount = null;
-        string? accountForTransfer = null;
-        decimal? amountTransferred = null;
-
-        foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
+        try
         {
-            if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Date, reader.Field.Name))
+            DateTime? date = null;
+            ClearedState clearedStatus = ClearedState.None;
+            string? memo = null;
+            string? action = null;
+            decimal? commission = null;
+            decimal? price = null;
+            decimal? quantity = null;
+            string? security = null;
+            string? payee = null;
+            decimal? transactionAmount = null;
+            string? accountForTransfer = null;
+            decimal? amountTransferred = null;
+
+            foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
             {
-                date = reader.ReadFieldAsDate();
+                if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Date, reader.Field.Name))
+                {
+                    date = reader.ReadFieldAsDate();
+                }
+                else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.ClearedStatus, reader.Field.Name))
+                {
+                    clearedStatus = reader.ReadFieldAsClearedState();
+                }
+                else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Memo, reader.Field.Name))
+                {
+                    memo = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Action, reader.Field.Name))
+                {
+                    action = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Commission, reader.Field.Name))
+                {
+                    commission = reader.ReadFieldAsDecimal();
+                }
+                else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Price, reader.Field.Name))
+                {
+                    price = reader.ReadFieldAsDecimal();
+                }
+                else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Quantity, reader.Field.Name))
+                {
+                    quantity = reader.ReadFieldAsDecimal();
+                }
+                else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Security, reader.Field.Name))
+                {
+                    security = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Payee, reader.Field.Name))
+                {
+                    payee = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.TransactionAmount, reader.Field.Name))
+                {
+                    transactionAmount = reader.ReadFieldAsDecimal();
+                }
+                else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.AccountForTransfer, reader.Field.Name))
+                {
+                    accountForTransfer = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.AmountTransferred, reader.Field.Name))
+                {
+                    amountTransferred = reader.ReadFieldAsDecimal();
+                }
             }
-            else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.ClearedStatus, reader.Field.Name))
+
+            return new(
+                ValueOrThrow(date, InvestmentTransaction.FieldNames.Date))
             {
-                clearedStatus = reader.ReadFieldAsClearedState();
-            }
-            else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Memo, reader.Field.Name))
-            {
-                memo = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Action, reader.Field.Name))
-            {
-                action = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Commission, reader.Field.Name))
-            {
-                commission = reader.ReadFieldAsDecimal();
-            }
-            else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Price, reader.Field.Name))
-            {
-                price = reader.ReadFieldAsDecimal();
-            }
-            else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Quantity, reader.Field.Name))
-            {
-                quantity = reader.ReadFieldAsDecimal();
-            }
-            else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Security, reader.Field.Name))
-            {
-                security = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.Payee, reader.Field.Name))
-            {
-                payee = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.TransactionAmount, reader.Field.Name))
-            {
-                transactionAmount = reader.ReadFieldAsDecimal();
-            }
-            else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.AccountForTransfer, reader.Field.Name))
-            {
-                accountForTransfer = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(InvestmentTransaction.FieldNames.AmountTransferred, reader.Field.Name))
-            {
-                amountTransferred = reader.ReadFieldAsDecimal();
-            }
+                ClearedStatus = clearedStatus,
+                Memo = memo,
+                Action = action,
+                Commission = commission,
+                Price = price,
+                Quantity = quantity,
+                Security = security,
+                Payee = payee,
+                TransactionAmount = transactionAmount,
+                AccountForTransfer = accountForTransfer,
+                AmountTransferred = amountTransferred,
+            };
         }
-
-        return new(
-            ValueOrThrow(date, InvestmentTransaction.FieldNames.Date))
+        catch (Exception ex)
         {
-            ClearedStatus = clearedStatus,
-            Memo = memo,
-            Action = action,
-            Commission = commission,
-            Price = price,
-            Quantity = quantity,
-            Security = security,
-            Payee = payee,
-            TransactionAmount = transactionAmount,
-            AccountForTransfer = accountForTransfer,
-            AmountTransferred = amountTransferred,
-        };
+            throw new InvalidTransactionException($"Error reading investment transaction record at or just above line {reader.LineNumber}.", ex);
+        }
     }
 
     /// <inheritdoc cref="Write(QifWriter, Account, bool)" />
@@ -819,52 +906,59 @@ public class QifSerializer
     /// <returns>The deserialized record.</returns>
     public virtual Account ReadAccount(QifReader reader)
     {
-        string? name = null;
-        string? type = null;
-        string? description = null;
-        decimal? creditLimit = null;
-        DateTime? statementBalanceDate = null;
-        decimal? statementBalance = null;
-
-        foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
+        try
         {
-            if (QifUtilities.Equals(Account.FieldNames.Name, reader.Field.Name))
+            string? name = null;
+            string? type = null;
+            string? description = null;
+            decimal? creditLimit = null;
+            DateTime? statementBalanceDate = null;
+            decimal? statementBalance = null;
+
+            foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
             {
-                name = reader.ReadFieldAsString();
+                if (QifUtilities.Equals(Account.FieldNames.Name, reader.Field.Name))
+                {
+                    name = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(Account.FieldNames.Type, reader.Field.Name))
+                {
+                    type = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(Account.FieldNames.Description, reader.Field.Name))
+                {
+                    description = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(Account.FieldNames.CreditLimit, reader.Field.Name))
+                {
+                    creditLimit = reader.ReadFieldAsDecimal();
+                }
+                else if (QifUtilities.Equals(Account.FieldNames.StatementBalanceDate, reader.Field.Name))
+                {
+                    statementBalanceDate = reader.ReadFieldAsDate();
+                }
+                else if (QifUtilities.Equals(Account.FieldNames.StatementBalance, reader.Field.Name))
+                {
+                    statementBalance = reader.ReadFieldAsDecimal();
+                }
             }
-            else if (QifUtilities.Equals(Account.FieldNames.Type, reader.Field.Name))
+
+            Account result = type is Account.Types.Investment or Account.Types.Investment2
+                ? new InvestmentAccount(type, ValueOrThrow(name, Account.FieldNames.Name))
+                : new BankAccount(ValueOrThrow(type, Account.FieldNames.Type), ValueOrThrow(name, Account.FieldNames.Name));
+
+            return result with
             {
-                type = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(Account.FieldNames.Description, reader.Field.Name))
-            {
-                description = reader.ReadFieldAsString();
-            }
-            else if (QifUtilities.Equals(Account.FieldNames.CreditLimit, reader.Field.Name))
-            {
-                creditLimit = reader.ReadFieldAsDecimal();
-            }
-            else if (QifUtilities.Equals(Account.FieldNames.StatementBalanceDate, reader.Field.Name))
-            {
-                statementBalanceDate = reader.ReadFieldAsDate();
-            }
-            else if (QifUtilities.Equals(Account.FieldNames.StatementBalance, reader.Field.Name))
-            {
-                statementBalance = reader.ReadFieldAsDecimal();
-            }
+                Description = description,
+                CreditLimit = creditLimit,
+                StatementBalanceDate = statementBalanceDate,
+                StatementBalance = statementBalance,
+            };
         }
-
-        Account result = type is Account.Types.Investment or Account.Types.Investment2
-            ? new InvestmentAccount(type, ValueOrThrow(name, Account.FieldNames.Name))
-            : new BankAccount(ValueOrThrow(type, Account.FieldNames.Type), ValueOrThrow(name, Account.FieldNames.Name));
-
-        return result with
+        catch (Exception ex)
         {
-            Description = description,
-            CreditLimit = creditLimit,
-            StatementBalanceDate = statementBalanceDate,
-            StatementBalance = statementBalance,
-        };
+            throw new InvalidTransactionException($"Error reading account record at or just above line {reader.LineNumber}.", ex);
+        }
     }
 
     /// <inheritdoc cref="Write(QifWriter, Class)" />
@@ -916,29 +1010,6 @@ public class QifSerializer
         }
 
         return null;
-    }
-
-    private static void WriteBankTransactionHelper(QifWriter writer, BankTransaction value)
-    {
-        writer.WriteField(BankTransaction.FieldNames.Date, value.Date);
-        writer.WriteField(BankTransaction.FieldNames.Amount, value.Amount);
-        writer.WriteField(BankTransaction.FieldNames.Number, value.Number);
-        writer.WriteField(BankTransaction.FieldNames.Memo, value.Memo);
-        writer.WriteField(BankTransaction.FieldNames.Category, value.Category);
-        writer.WriteField(BankTransaction.FieldNames.ClearedStatus, value.ClearedStatus);
-        writer.WriteField(BankTransaction.FieldNames.Payee, value.Payee);
-        foreach (string address in value.Address)
-        {
-            writer.WriteField(BankTransaction.FieldNames.Address, address);
-        }
-
-        foreach (BankSplit split in value.Splits)
-        {
-            writer.WriteField(BankTransaction.FieldNames.SplitCategory, split.Category);
-            writer.WriteField(BankTransaction.FieldNames.SplitMemo, split.Memo);
-            writer.WriteField(BankTransaction.FieldNames.SplitAmount, split.Amount);
-            writer.WriteField(BankTransaction.FieldNames.SplitPercent, split.Percentage);
-        }
     }
 
     private static string GetAccountTypeString(AccountType type)

@@ -7,49 +7,95 @@ namespace Nerdbank.Qif;
 /// A memorized transaction.
 /// </summary>
 /// <param name="Type">The type of memorized transaction.</param>
-/// <param name="Date">The date of the transaction.</param>
-/// <param name="Amount">The amount of the transaction.</param>
-public record MemorizedTransaction(MemorizedTransactionType Type, DateTime Date, decimal Amount) : BankTransaction(AccountType.Memorized, Date, Amount)
+public record MemorizedTransaction(MemorizedTransactionType Type)
 {
     /// <summary>
-    /// Gets or sets the amortization current loan balance.
+    /// Gets the cleared or reconciled state of the transaction.
     /// </summary>
-    public decimal? AmortizationCurrentLoanBalance { get; set; }
+    public ClearedState ClearedStatus { get; init; }
 
     /// <summary>
-    /// Gets or sets the amortization first payment date.
+    /// Gets the payee, or a description for deposits, transfers, etc.
     /// </summary>
-    public DateTime? AmortizationFirstPaymentDate { get; set; }
+    public string? Payee { get; init; }
 
     /// <summary>
-    /// Gets or sets the amortization interest rate.
+    /// Gets the memo.
     /// </summary>
-    public decimal? AmortizationInterestRate { get; set; }
+    public string? Memo { get; init; }
 
     /// <summary>
-    /// Gets or sets the amortization number of payments already made.
+    /// Gets the date of the transaction.
     /// </summary>
-    public int? AmortizationNumberOfPaymentsAlreadyMade { get; set; }
+    public DateTime? Date { get; init; }
 
     /// <summary>
-    /// Gets or sets the amortization number of periods per year.
+    /// Gets the check number. Can also be "Deposit", "Transfer", "Print", "ATM", "EFT".
     /// </summary>
-    public int? AmortizationNumberOfPeriodsPerYear { get; set; }
+    public string? Number { get; init; }
 
     /// <summary>
-    /// Gets or sets the amortization original loan amount.
+    /// Gets the amount of the transaction.
     /// </summary>
-    public decimal? AmortizationOriginalLoanAmount { get; set; }
+    public decimal? Amount { get; init; }
 
     /// <summary>
-    /// Gets or sets the amortization total years for loan.
+    /// Gets the category assigned to the transaction.
     /// </summary>
-    public int? AmortizationTotalYearsForLoan { get; set; }
+    public string? Category { get; init; }
+
+    /// <summary>
+    /// Gets the list of address lines of the payee of this transaction.
+    /// </summary>
+    /// <remarks>
+    /// Up to 5 address lines are allowed. A 6th address line is a message that prints on the check. 1st line is normally the same as the Payee line—the name of the Payee.
+    /// </remarks>
+    public ImmutableList<string> Address { get; init; } = ImmutableList<string>.Empty;
+
+    /// <summary>
+    /// Gets the split lines in the transaction.
+    /// </summary>
+    public ImmutableList<BankSplit> Splits { get; init; } = ImmutableList<BankSplit>.Empty;
+
+    /// <summary>
+    /// Gets the amortization current loan balance.
+    /// </summary>
+    public decimal? AmortizationCurrentLoanBalance { get; init; }
+
+    /// <summary>
+    /// Gets the amortization first payment date.
+    /// </summary>
+    public DateTime? AmortizationFirstPaymentDate { get; init; }
+
+    /// <summary>
+    /// Gets the amortization interest rate.
+    /// </summary>
+    public decimal? AmortizationInterestRate { get; init; }
+
+    /// <summary>
+    /// Gets the amortization number of payments already made.
+    /// </summary>
+    public int? AmortizationNumberOfPaymentsAlreadyMade { get; init; }
+
+    /// <summary>
+    /// Gets the amortization number of periods per year.
+    /// </summary>
+    public int? AmortizationNumberOfPeriodsPerYear { get; init; }
+
+    /// <summary>
+    /// Gets the amortization original loan amount.
+    /// </summary>
+    public decimal? AmortizationOriginalLoanAmount { get; init; }
+
+    /// <summary>
+    /// Gets the amortization total years for loan.
+    /// </summary>
+    public int? AmortizationTotalYearsForLoan { get; init; }
 
     /// <summary>
     /// The names of each field that may appear in this record.
     /// </summary>
-    internal new class FieldNames : BankTransaction.FieldNames
+    internal class FieldNames : BankTransaction.FieldNames
     {
         internal const string Type = "K";
         internal const string AmortizationFirstPaymentDate = "1";

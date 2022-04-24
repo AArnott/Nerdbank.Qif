@@ -20,7 +20,8 @@ public class ImportTests : TestBase
     [Fact]
     public void Cannot_import_sample_qif_when_current_culture_is_ar_SA()
     {
-        Assert.Throws<FormatException>(() => Load("ar-SA"));
+        InvalidTransactionException ex = Assert.Throws<InvalidTransactionException>(() => Load("ar-SA"));
+        Assert.IsType<FormatException>(ex.InnerException?.InnerException);
     }
 
     [Fact]

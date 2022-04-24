@@ -198,6 +198,21 @@ KE
     }
 
     [Fact]
+    public void ReadMemorizedTransaction_RequiredOnlyFields()
+    {
+        const string qifSource = @"KP
+^
+";
+        MemorizedTransaction transaction = Read(qifSource, this.serializer.ReadMemorizedTransaction);
+        Assert.Null(transaction.Date);
+        Assert.Null(transaction.Amount);
+        Assert.Null(transaction.Number);
+        Assert.Null(transaction.Payee);
+        Assert.Null(transaction.Category);
+        Assert.Equal(MemorizedTransactionType.Payment, transaction.Type);
+    }
+
+    [Fact]
     public void ReadMemorizedTransaction_Simple_TypeAtTop()
     {
         const string qifSource = @"D2/3/2013
@@ -712,15 +727,15 @@ Nsecurity2
     public void Write_MemorizedTransaction()
     {
         this.AssertSerialized(
-            new MemorizedTransaction(MemorizedTransactionType.Check, Date, 35),
+            new MemorizedTransaction(MemorizedTransactionType.Check) { Date = Date, Amount = 35 },
             "KC\nD02/03/2013\nT35\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new MemorizedTransaction(MemorizedTransactionType.Deposit, Date, 35) { Address = ImmutableList.Create("addr", "city"), Category = "cat", ClearedStatus = ClearedState.Cleared, Memo = "memo", Number = "123", Payee = "payee", AmortizationCurrentLoanBalance = 14, AmortizationFirstPaymentDate = Date2, AmortizationInterestRate = .12m, AmortizationNumberOfPaymentsAlreadyMade = 13, AmortizationNumberOfPeriodsPerYear = 6, AmortizationOriginalLoanAmount = 10000, AmortizationTotalYearsForLoan = 30 },
+            new MemorizedTransaction(MemorizedTransactionType.Deposit) { Date = Date, Amount = 35, Address = ImmutableList.Create("addr", "city"), Category = "cat", ClearedStatus = ClearedState.Cleared, Memo = "memo", Number = "123", Payee = "payee", AmortizationCurrentLoanBalance = 14, AmortizationFirstPaymentDate = Date2, AmortizationInterestRate = .12m, AmortizationNumberOfPaymentsAlreadyMade = 13, AmortizationNumberOfPeriodsPerYear = 6, AmortizationOriginalLoanAmount = 10000, AmortizationTotalYearsForLoan = 30 },
             "KD\nD02/03/2013\nT35\nN123\nMmemo\nLcat\nCC\nPpayee\nAaddr\nAcity\n102/04/2013\n230\n313\n46\n50.12\n614\n710000\n^\n",
             this.serializer.Write);
         this.AssertSerialized(
-            new MemorizedTransaction(MemorizedTransactionType.Payment, Date, 35) { Splits = ImmutableList.Create<BankSplit>(new("cat1", "memo1") { Amount = 10 }, new("cat2", "memo2") { Percentage = 15 }) },
+            new MemorizedTransaction(MemorizedTransactionType.Payment) { Date = Date, Amount = 35, Splits = ImmutableList.Create<BankSplit>(new("cat1", "memo1") { Amount = 10 }, new("cat2", "memo2") { Percentage = 15 }) },
             "KP\nD02/03/2013\nT35\nScat1\nEmemo1\n$10\nScat2\nEmemo2\n%15\n^\n",
             this.serializer.Write);
     }
@@ -899,8 +914,8 @@ D02/04/2013
             },
             MemorizedTransactions =
             {
-                new MemorizedTransaction(MemorizedTransactionType.Deposit, Date, 10),
-                new MemorizedTransaction(MemorizedTransactionType.Deposit, Date2, 10),
+                new MemorizedTransaction(MemorizedTransactionType.Deposit) { Date = Date, Amount = 10 },
+                new MemorizedTransaction(MemorizedTransactionType.Deposit) { Date = Date2, Amount = 10 },
             },
             Categories =
             {
