@@ -35,6 +35,11 @@ public class QifDocument
     public List<Category> Categories { get; } = new();
 
     /// <summary>
+    /// Gets a collection of tags.
+    /// </summary>
+    public List<Tag> Tags { get; } = new();
+
+    /// <summary>
     /// Gets a collection of classes.
     /// </summary>
     public List<Class> Classes { get; } = new();

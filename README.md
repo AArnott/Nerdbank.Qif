@@ -12,6 +12,7 @@ The following data types are supported in QIF files:
 * Memorized transactions
 * Classes
 * Categories
+* Tags
 * Price history
 * Securities
 * Accounts

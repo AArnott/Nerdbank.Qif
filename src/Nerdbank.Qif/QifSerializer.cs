@@ -32,6 +32,7 @@ public class QifSerializer
 
         WriteRecord("Type", Account.Types.Memorized, value.MemorizedTransactions, this.Write);
         WriteRecord("Type", "Cat", value.Categories, this.Write);
+        WriteRecord("Type", "Tag", value.Tags, this.Write);
         WriteRecord("Type", "Class", value.Classes, this.Write);
         WriteRecord("Type", "Security", value.Securities, this.Write);
         WriteRecord("Type", "Prices", value.Prices, this.Write);
@@ -128,6 +129,14 @@ public class QifSerializer
                         while (reader.Kind == QifToken.Field)
                         {
                             result.Categories.Add(this.ReadCategory(reader));
+                        }
+                    }
+                    else if (QifUtilities.Equals("Tag", reader.Header.Value))
+                    {
+                        reader.MoveNext();
+                        while (reader.Kind == QifToken.Field)
+                        {
+                            result.Tags.Add(this.ReadTag(reader));
                         }
                     }
                     else if (QifUtilities.Equals("Class", reader.Header.Value))
@@ -595,6 +604,49 @@ public class QifSerializer
         catch (Exception ex)
         {
             throw new InvalidTransactionException($"Error reading memorized transaction record at or just above line {reader.LineNumber}.", ex);
+        }
+    }
+
+    /// <inheritdoc cref="Write(QifWriter, Class)" />
+    public virtual void Write(QifWriter writer, Tag value)
+    {
+        writer.WriteField(Tag.FieldNames.Name, value.Name);
+        writer.WriteField(Tag.FieldNames.Description, value.Description);
+        writer.WriteEndOfRecord();
+    }
+
+    /// <summary>
+    /// Deserializes a <see cref="Tag"/> from the given <see cref="QifReader"/>.
+    /// </summary>
+    /// <param name="reader">The reader to deserialize from.</param>
+    /// <returns>The deserialized record.</returns>
+    public virtual Tag ReadTag(QifReader reader)
+    {
+        try
+        {
+            string? name = null;
+            string? description = null;
+
+            foreach ((ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) field in reader.ReadTheseFields())
+            {
+                if (QifUtilities.Equals(Tag.FieldNames.Name, field.Name))
+                {
+                    name = reader.ReadFieldAsString();
+                }
+                else if (QifUtilities.Equals(Tag.FieldNames.Description, field.Name))
+                {
+                    description = reader.ReadFieldAsString();
+                }
+            }
+
+            return new(ValueOrThrow(name, Tag.FieldNames.Name))
+            {
+                Description = description,
+            };
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidTransactionException($"Error reading tag record at or just above line {reader.LineNumber}.", ex);
         }
     }
 

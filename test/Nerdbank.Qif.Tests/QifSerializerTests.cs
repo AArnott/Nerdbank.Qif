@@ -395,6 +395,27 @@ $0.00
     }
 
     [Fact]
+    public void ReadTag_Minimal()
+    {
+        const string qifSource = @"NSome tag
+^";
+        Tag tag = Read(qifSource, r => this.serializer.ReadTag(r));
+        Assert.Equal("Some tag", tag.Name);
+        Assert.Null(tag.Description);
+    }
+
+    [Fact]
+    public void ReadTag_Exhaustive()
+    {
+        const string qifSource = @"NSome tag
+DSome description
+^";
+        Tag tag = Read(qifSource, r => this.serializer.ReadTag(r));
+        Assert.Equal("Some tag", tag.Name);
+        Assert.Equal("Some description", tag.Description);
+    }
+
+    [Fact]
     public void ReadCategory_Income()
     {
         const string qifSource = @"NBonus
@@ -687,6 +708,11 @@ Nsecurity2
 ^
 ""BEXFX"",11.53,"" 2/ 4'13""
 ^
+!Type:Tag
+Ntag1
+^
+Ntag2
+^
 ";
 
         QifDocument actual = Read(qifSource, this.serializer.ReadDocument);
@@ -696,6 +722,7 @@ Nsecurity2
         Assert.Equal<Category>(expected.Categories, actual.Categories);
         Assert.Equal<Class>(expected.Classes, actual.Classes);
         Assert.Equal<Price>(expected.Prices, actual.Prices);
+        Assert.Equal<Tag>(expected.Tags, actual.Tags);
     }
 
     [Fact]
@@ -845,6 +872,19 @@ Nsecurity2
     }
 
     [Fact]
+    public void Write_Tag()
+    {
+        this.AssertSerialized(
+            new Tag("My tag"),
+            "NMy tag\n^\n",
+            this.serializer.Write);
+        this.AssertSerialized(
+            new Tag("My tag") { Description = "My description" },
+            "NMy tag\nDMy description\n^\n",
+            this.serializer.Write);
+    }
+
+    [Fact]
     public void Write_InvestmentTransaction()
     {
         this.AssertSerialized(
@@ -913,6 +953,11 @@ T10
 Ncat1
 ^
 Ncat2
+^
+!Type:Tag
+Ntag1
+^
+Ntag2
 ^
 !Type:Class
 Nclass1
@@ -1040,6 +1085,11 @@ D02/04/2013
             {
                 new Price("BEXFX", 11.52m, Date),
                 new Price("BEXFX", 11.53m, Date2),
+            },
+            Tags =
+            {
+                new Tag("tag1"),
+                new Tag("tag2"),
             },
         };
     }
