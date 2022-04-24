@@ -422,10 +422,7 @@ public class QifSerializer
             string? memo = null;
             string? category = null;
             ImmutableList<string> address = ImmutableList<string>.Empty;
-            ImmutableList<string> splitCategories = ImmutableList<string>.Empty;
-            ImmutableList<string> splitMemos = ImmutableList<string>.Empty;
-            ImmutableList<decimal> splitAmounts = ImmutableList<decimal>.Empty;
-            ImmutableList<decimal> splitPercentage = ImmutableList<decimal>.Empty;
+            ImmutableList<BankSplit> splits = ImmutableList<BankSplit>.Empty;
             DateTime? amortizationFirstPaymentDate = null;
             int? amortizationTotalYearsForLoan = null;
             int? amortizationNumberOfPaymentsAlreadyMade = null;
@@ -470,19 +467,19 @@ public class QifSerializer
                 }
                 else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitCategory, field.Name))
                 {
-                    splitCategories = splitCategories.Add(reader.ReadFieldAsString());
+                    splits = splits.Add(new BankSplit(reader.ReadFieldAsString(), null));
                 }
                 else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitMemo, field.Name))
                 {
-                    splitMemos = splitMemos.Add(reader.ReadFieldAsString());
+                    splits = splits.SetItem(splits.Count - 1, splits[^1] with { Memo = reader.ReadFieldAsString() });
                 }
                 else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitAmount, field.Name))
                 {
-                    splitAmounts = splitAmounts.Add(reader.ReadFieldAsDecimal());
+                    splits = splits.SetItem(splits.Count - 1, splits[^1] with { Amount = reader.ReadFieldAsDecimal() });
                 }
                 else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.SplitPercent, field.Name))
                 {
-                    splitPercentage = splitPercentage.Add(reader.ReadFieldAsDecimal());
+                    splits = splits.SetItem(splits.Count - 1, splits[^1] with { Percentage = reader.ReadFieldAsDecimal() });
                 }
                 else if (QifUtilities.Equals(MemorizedTransaction.FieldNames.Type, field.Name))
                 {
@@ -529,29 +526,6 @@ public class QifSerializer
                 {
                     amortizationOriginalLoanAmount = (int)reader.ReadFieldAsInt64();
                 }
-            }
-
-            if (splitCategories.Count != splitMemos.Count ||
-                splitCategories.Count != Math.Max(splitAmounts.Count, splitPercentage.Count))
-            {
-                throw new InvalidTransactionException("Inconsistent number of fields for splits.");
-            }
-
-            ImmutableList<BankSplit> splits = ImmutableList<BankSplit>.Empty;
-            if (splitCategories.Count > 0)
-            {
-                var splitsBuilder = splits.ToBuilder();
-                for (int i = 0; i < splitCategories.Count; i++)
-                {
-                    BankSplit split = new(splitCategories[i], splitMemos[i])
-                    {
-                        Amount = splitAmounts.Count > i ? splitAmounts[i] : null,
-                        Percentage = splitPercentage.Count > i ? splitPercentage[i] : null,
-                    };
-                    splitsBuilder.Add(split);
-                }
-
-                splits = splitsBuilder.ToImmutable();
             }
 
             return new(ValueOrThrow(type, MemorizedTransaction.FieldNames.Type))

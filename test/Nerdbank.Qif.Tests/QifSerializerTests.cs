@@ -290,6 +290,40 @@ $500
         Assert.Equal(30, transaction.AmortizationTotalYearsForLoan);
     }
 
+    /// <summary>
+    /// Asserts that when memos are omitted from a split line item, we still track subsequent memos the way Quicken intended.
+    /// </summary>
+    [Fact]
+    public void ReadMemorizedTransaction_FewerSplitMemos()
+    {
+        const string qifSource = @"D1/1/2008
+KE
+T1500
+SSplit1Cat
+ESplit1Memo
+$400
+SSplit2Cat
+ESplit2Memo
+$600
+SSplit3Cat
+$300
+SSplit4Cat
+ESplit4Memo
+$200
+^
+";
+        MemorizedTransaction transaction = Read(qifSource, r => this.serializer.ReadMemorizedTransaction(r));
+        Assert.Equal(
+            new BankSplit[]
+            {
+                new("Split1Cat", "Split1Memo") { Amount = 400 },
+                new("Split2Cat", "Split2Memo") { Amount = 600 },
+                new("Split3Cat", null) { Amount = 300 },
+                new("Split4Cat", "Split4Memo") { Amount = 200 },
+            },
+            transaction.Splits);
+    }
+
     [Fact]
     public void ReadCategory_Income()
     {
