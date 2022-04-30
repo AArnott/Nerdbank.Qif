@@ -164,6 +164,18 @@ public record InvestmentTransaction(DateTime Date) : Transaction(AccountType.Inv
         /// A cash deposit to the investment account.
         /// </summary>
         public const string Cash = "Cash";
+
+        /// <summary>
+        /// A short sale.
+        /// </summary>
+        /// <seealso cref="CvrShrt"/>
+        public const string ShtSell = "ShtSell";
+
+        /// <summary>
+        /// Closes an open short sale position.
+        /// </summary>
+        /// <seealso cref="ShtSell"/>
+        public const string CvrShrt = "CvrShrt";
     }
 
     /// <summary>
