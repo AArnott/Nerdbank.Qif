@@ -27,6 +27,7 @@ public record InvestmentTransaction(DateTime Date) : Transaction(AccountType.Inv
 
     /// <summary>
     /// Gets the quantity.
+    /// Or if <see cref="Action"/> is <see cref="Actions.StkSplit"/>, this is the number of shares every 10 shares becomes (e.g. 100 means 10 shares becomes 100, or a 10:1 split).
     /// </summary>
     public decimal? Quantity { get; init; }
 
@@ -84,6 +85,9 @@ public record InvestmentTransaction(DateTime Date) : Transaction(AccountType.Inv
 
         /// <summary>Short-term capital gains transferred to another account.</summary>
         public const string CGShortX = "CGShortX";
+
+        /// <summary>A transfer from another account.</summary>
+        public const string ContribX = "ContribX";
 
         /// <summary>Dividend received in the account.</summary>
         public const string Div = "Div";
